@@ -165,3 +165,72 @@ test('SSH findings join the same list as everything else', async () => {
     assert.ok(finding.advice && finding.advice.length > 12, `${finding.rule} carries no advice`);
   }
 });
+
+
+// ---------------------------------------------------------------------------
+// Self scanning.
+//
+// A scan result quotes the advice, and the advice names the replacements, so
+// reading one back adds SHA-256 and SHA-384 to the inventory out of a sentence.
+// A filename list was always going to be incomplete and was: output written to
+// q1.json was read straight back on the next run.
+// ---------------------------------------------------------------------------
+
+test('Miftah does not read its own output back, whatever it is named', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const { buildCbom } = await import('../src/cbom.js');
+  const { buildSarif } = await import('../src/sarif.js');
+  const { createBaseline } = await import('../src/baseline.js');
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'miftah-self-'));
+  fs.writeFileSync(path.join(dir, 'app.js'), "crypto.createHash('sha1').update(x)");
+
+  const first = scanTree(dir);
+  assert.equal(first.findings.length, 1, 'the fixture itself should produce exactly one finding');
+
+  // Deliberately unhelpful names, because that is the case the old check missed.
+  fs.writeFileSync(path.join(dir, 'q1.json'), JSON.stringify(first));
+  fs.writeFileSync(path.join(dir, 'last-quarter.json'), JSON.stringify(first));
+  fs.writeFileSync(path.join(dir, 'inventory-2026.json'), JSON.stringify(buildCbom(first)));
+  fs.writeFileSync(path.join(dir, 'findings.json'), JSON.stringify(buildSarif(first)));
+  fs.writeFileSync(path.join(dir, 'accepted.json'), JSON.stringify(createBaseline(first)));
+
+  const second = scanTree(dir);
+  assert.equal(second.findings.length, 1, `Miftah read its own output back: ${second.findings.map((f) => f.file).join(', ')}`);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('a scan result identifies itself', () => {
+  assert.equal(scan.generator, 'miftah', 'output that cannot be recognised will be scanned back');
+});
+
+test('adding a broken algorithm lowers readiness', async () => {
+  // I misread a self scanning bug as a flaw in this model, so the property is
+  // pinned here rather than left to inspection.
+  const { scoreEstate } = await import('../src/risk.js');
+  const profile = { shelfLife: 10, migrationYears: 5, crqcYear: 2033, exposure: 'internet' };
+
+  const before = [
+    { id: 'SHA-1', name: 'SHA-1', quantum: 'broken', classical: 'broken', primitive: 'hash', severity: 'high', occurrences: [{ file: 'a.js', line: 1 }] },
+    { id: 'SHA-256', name: 'SHA-256', quantum: 'weakened', classical: 'strong', primitive: 'hash', severity: 'info', occurrences: [{ file: 'a.js', line: 2 }] }
+  ];
+  const after = [
+    ...before,
+    { id: 'RC4', name: 'RC4', quantum: 'broken', classical: 'broken', primitive: 'stream-cipher', severity: 'critical', occurrences: [{ file: 'b.js', line: 1 }] }
+  ];
+
+  const scoreBefore = scoreEstate(before, profile).readiness;
+  const scoreAfter = scoreEstate(after, profile).readiness;
+  assert.ok(scoreAfter < scoreBefore, `readiness rose from ${scoreBefore} to ${scoreAfter} when a broken algorithm was added`);
+});
+
+test('replacing a broken algorithm with a resistant one raises readiness', async () => {
+  const { scoreEstate } = await import('../src/risk.js');
+  const profile = { shelfLife: 10, migrationYears: 5, crqcYear: 2033, exposure: 'internet' };
+  const occurrences = [{ file: 'a.js', line: 1 }];
+
+  const before = scoreEstate([{ id: 'RSA', name: 'RSA', quantum: 'broken', classical: 'acceptable', primitive: 'pke', severity: 'high', occurrences }], profile);
+  const after = scoreEstate([{ id: 'MLKEM', name: 'ML-KEM-768', quantum: 'resistant', classical: 'strong', primitive: 'kem', severity: 'info', occurrences }], profile);
+  assert.ok(after.readiness > before.readiness);
+});

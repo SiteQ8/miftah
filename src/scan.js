@@ -96,10 +96,35 @@ const LOCKFILES = new Set([
   'Cargo.lock', 'go.sum', 'gradle.lockfile', 'pubspec.lock'
 ]);
 
-const OWN_OUTPUT = /^(?:\.miftah-baseline\.json|miftah-baseline\.json|cbom\.json|scan\.json|[^/\\]*\.sarif)$/i;
+// Miftah's own artefacts are full of algorithm names by construction: a scan
+// result quotes the advice, and the advice names the replacements. Reading one
+// back reports the tool's output as the estate's problem.
+//
+// A filename list was always going to be incomplete, and was: a scan written to
+// q1.json was read back on the next run and added SHA-256 and SHA-384 to the
+// inventory out of an advice string. Output is stamped and the stamp is what is
+// looked for, so the name no longer matters.
+export const GENERATOR = 'miftah';
+
+const OWN_OUTPUT_NAME = /^(?:\.miftah-baseline\.json|miftah-baseline\.json|cbom\.json|scan\.json|[^/\\]*\.sarif)$/i;
+const OWN_OUTPUT_MARKER = /"(?:generator|tool)"\s*:\s*"miftah"|"name"\s*:\s*"Miftah"/i;
+const SNIFF_BYTES = 4096;
 
 export function isOwnOutput(file) {
-  return OWN_OUTPUT.test(path.basename(file));
+  if (OWN_OUTPUT_NAME.test(path.basename(file))) return true;
+  if (!/\.(?:json|sarif|cdx)$/i.test(file)) return false;
+  try {
+    const handle = fs.openSync(file, 'r');
+    try {
+      const buffer = Buffer.alloc(SNIFF_BYTES);
+      const read = fs.readSync(handle, buffer, 0, SNIFF_BYTES, 0);
+      return OWN_OUTPUT_MARKER.test(buffer.toString('utf8', 0, read));
+    } finally {
+      fs.closeSync(handle);
+    }
+  } catch {
+    return false;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -600,6 +625,7 @@ export function scanTree(root, options = {}) {
   );
 
   return {
+    generator: GENERATOR,
     target: path.resolve(root),
     startedAt: new Date(started).toISOString(),
     durationMs: Date.now() - started,
