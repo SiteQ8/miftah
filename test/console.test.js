@@ -144,3 +144,72 @@ test('the console scoring agrees with the node scoring', { skip: !JSDOM && 'jsdo
   assert.equal(inBrowser.counts.quantumBroken, inNode.counts.quantumBroken);
   window.close();
 });
+
+// ---------------------------------------------------------------------------
+// The table rotted while the hero band stayed fine. These pin the parts that
+// broke, because every one of them was invisible from the code and obvious in
+// a screenshot.
+// ---------------------------------------------------------------------------
+
+test('an asset name and its note do not run together', { skip: !JSDOM && 'jsdom is not installed' }, async () => {
+  // The row emitted class="note" while the stylesheet defined .asset-note, so
+  // the note took no styling and rendered as RC4Biased keystream.
+  const dom = new JSDOM(buildConsole(scan), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const { window } = dom;
+  await new Promise((resolve) => setTimeout(resolve, 30));
+
+  const notes = window.document.querySelectorAll('#inventory .asset-note');
+  assert.ok(notes.length > 0, 'no asset carried a note element');
+  for (const note of notes) {
+    assert.ok(note.previousElementSibling, 'a note has no name beside it');
+    assert.equal(note.previousElementSibling.className, 'asset-name');
+  }
+  const styles = buildConsole(scan);
+  assert.match(styles, /\.asset-note\s*\{[^}]*display:\s*block/, 'the note is not on its own line');
+  window.close();
+});
+
+test('the risk column draws a bar, not a number on a block', { skip: !JSDOM && 'jsdom is not installed' }, async () => {
+  const dom = new JSDOM(buildConsole(scan), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const { window } = dom;
+  await new Promise((resolve) => setTimeout(resolve, 30));
+
+  const fills = window.document.querySelectorAll('#inventory .risk-fill');
+  assert.ok(fills.length > 0, 'no risk bar was drawn');
+  for (const fill of fills) {
+    assert.match(fill.getAttribute('style'), /width:\s*\d+%/, 'a risk bar has no width');
+    assert.match(fill.getAttribute('style'), /background:\s*#/, 'a risk bar has no colour');
+  }
+  // The colour should carry the band, so the highest and lowest must differ.
+  const colours = new Set([...fills].map((f) => f.getAttribute('style').split('background:')[1]));
+  assert.ok(colours.size > 1, 'every risk bar is the same colour, so length is the only signal');
+  window.close();
+});
+
+test('the verdict column is a dot rather than a wall of blocks', { skip: !JSDOM && 'jsdom is not installed' }, async () => {
+  const html = buildConsole(scan);
+  assert.match(html, /\.chip::before/, 'the chip carries no dot');
+  assert.match(html, /--chip-dot:/, 'the chip colour is not passed as a dot');
+
+  const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true });
+  const { window } = dom;
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  for (const chip of window.document.querySelectorAll('#inventory .chip')) {
+    assert.ok(!/background:\s*#/.test(chip.getAttribute('style') || ''), 'a verdict chip is still solid filled');
+  }
+  window.close();
+});
+
+test('the inventory table declares its column widths', { skip: !JSDOM && 'jsdom is not installed' }, async () => {
+  // Without them the asset column takes a quarter of the table and the uses
+  // column wraps its own header to two lines.
+  const dom = new JSDOM(buildConsole(scan), { runScripts: 'dangerously', pretendToBeVisual: true });
+  const { window } = dom;
+  await new Promise((resolve) => setTimeout(resolve, 30));
+
+  const cols = window.document.querySelectorAll('#inventory colgroup col');
+  const headers = window.document.querySelectorAll('#inventory thead th');
+  assert.equal(cols.length, headers.length, 'the column widths and the headers disagree');
+  assert.ok(cols.length >= 7);
+  window.close();
+});

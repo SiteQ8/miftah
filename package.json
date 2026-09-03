@@ -1,6 +1,6 @@
 {
   "name": "miftah",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "Cryptographic inventory and post-quantum readiness. Scans code, config, certificates, TLS endpoints and SSH hosts, writes a CycloneDX 1.6 CBOM, scores quantum risk and plans the migration to ML-KEM and ML-DSA.",
   "type": "module",
   "bin": {
