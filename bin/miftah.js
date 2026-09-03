@@ -17,6 +17,10 @@ import { assemble, toMarkdown, toHtml } from '../src/report.js';
 import { buildConsole } from '../src/console.js';
 import { SEVERITY_WEIGHT } from '../src/rules.js';
 import { VERSION } from '../src/index.js';
+import {
+  createBaseline, readBaseline, writeBaseline, applyBaseline, pruneBaseline, DEFAULT_BASELINE
+} from '../src/baseline.js';
+import { buildSarif, validateSarif } from '../src/sarif.js';
 
 const COLOUR = process.stdout.isTTY && !process.env.NO_COLOR;
 const paint = (code, text) => (COLOUR ? `\u001b[${code}m${text}\u001b[0m` : text);
@@ -64,6 +68,8 @@ Options
   --certs <path>       Fold certificates into a scan
   --endpoint <h:p>     Fold a live TLS probe into a scan, repeatable
   --fail-on <level>    Exit non zero at or above this severity
+  --baseline <file>    Only fail on findings absent from this baseline
+  --sarif <file>       Write SARIF 2.1.0 for code scanning
   --exclude <dir>      Skip a directory, repeatable
   --strict             Do not downgrade findings in tests, fixtures or lists
   --lockfiles          Scan dependency lockfiles as well
@@ -73,6 +79,8 @@ Options
 
 Examples
   miftah scan . --cbom cbom.json --md CRYPTO.md --fail-on high
+  miftah baseline .                       accept what is there today
+  miftah scan . --baseline .miftah-baseline.json --fail-on high --sarif out.sarif
   miftah scan ./service --endpoint api.example.com:443 --html report.html
   miftah tls example.com:443 --json tls.json
   miftah console scan.json --out console.html
@@ -88,7 +96,7 @@ function parseArgs(argv) {
     }
     const name = arg.slice(2);
     const takesValue = ![
-      'quiet', 'help', 'version', 'no-color', 'validate', 'redact', 'strict', 'lockfiles'
+      'quiet', 'help', 'version', 'no-color', 'validate', 'redact', 'strict', 'lockfiles', 'prune'
     ].includes(name);
     if (!takesValue) {
       options[name] = true;
@@ -236,12 +244,86 @@ async function commandScan(options) {
     scan.assets = inventory(scan.findings);
   }
 
-  emit(scan, options);
-  if (!options.quiet) printSummary(scan, profileFrom(options));
-  return failLevel(scan, options['fail-on']);
+  // The gate looks at what a baseline has not already accepted. Nothing is
+  // removed from the scan, so every report still shows the whole estate.
+  let gated = scan.findings;
+  let split = null;
+  if (options.baseline && options.baseline !== true) {
+    if (!fs.existsSync(options.baseline)) {
+      throw new Error(`No baseline at ${options.baseline}. Create one with: miftah baseline ${target}`);
+    }
+    split = applyBaseline(scan, readBaseline(options.baseline));
+    gated = split.introduced;
+    scan.baseline = {
+      file: options.baseline,
+      accepted: split.suppressed.length,
+      introduced: split.introduced.length,
+      resolved: split.resolved.length
+    };
+  }
+
+  emit(scan, options, gated);
+  if (!options.quiet) {
+    printSummary(scan, profileFrom(options));
+    if (split) printBaseline(split, options.baseline);
+  }
+  return failLevel({ findings: gated }, options['fail-on']);
 }
 
-function emit(scan, options) {
+function printBaseline(split, file) {
+  const line = [];
+  line.push(`${dim('baseline')} ${path.relative(process.cwd(), file)}`);
+  line.push(`${split.suppressed.length} accepted`);
+  line.push(split.introduced.length ? red(`${split.introduced.length} new`) : `${green('0 new')}`);
+  if (split.resolved.length) line.push(`${split.resolved.length} fixed since`);
+  process.stdout.write(`\n  ${line.join('  ')}\n`);
+  if (split.resolved.length) {
+    process.stdout.write(`  ${dim('Run')} miftah baseline . --prune ${dim('to drop what is fixed.')}\n`);
+  }
+  if (split.introduced.length) {
+    process.stdout.write(`\n  ${bold('New since the baseline')}\n`);
+    for (const finding of split.introduced.slice(0, 10)) {
+      process.stdout.write(`    ${(SEVERITY_PAINT[finding.severity] || dim)(finding.severity.padEnd(8))} ${finding.file}:${finding.line}  ${finding.title}\n`);
+    }
+    if (split.introduced.length > 10) {
+      process.stdout.write(`    ${dim(`and ${split.introduced.length - 10} more`)}\n`);
+    }
+  }
+}
+
+async function commandBaseline(options) {
+  const target = options._[1] || '.';
+  if (!fs.existsSync(target)) throw new Error(`No such path: ${target}`);
+  const file = (options.baseline && options.baseline !== true) ? options.baseline : DEFAULT_BASELINE;
+
+  const scan = scanTree(target, {
+    exclude: options.exclude,
+    redactEvidence: options.redact !== false,
+    strict: options.strict === true,
+    lockfiles: options.lockfiles === true
+  });
+  scan.version = VERSION;
+
+  if (options.prune) {
+    if (!fs.existsSync(file)) throw new Error(`No baseline at ${file} to prune.`);
+    const { baseline, removed } = pruneBaseline(readBaseline(file), scan);
+    writeBaseline(file, baseline);
+    if (!options.quiet) {
+      process.stdout.write(`\n  ${cyan('pruned')} ${path.relative(process.cwd(), file)}  ${removed} fixed and removed, ${baseline.accepted.length} still accepted\n\n`);
+    }
+    return 0;
+  }
+
+  const baseline = createBaseline(scan);
+  writeBaseline(file, baseline);
+  if (!options.quiet) {
+    process.stdout.write(`\n  ${cyan('wrote')} ${path.relative(process.cwd(), file)}  ${baseline.accepted.length} findings accepted\n`);
+    process.stdout.write(`  ${dim('Commit this file. From now on the build fails only on what is new.')}\n\n`);
+  }
+  return 0;
+}
+
+function emit(scan, options, gated) {
   const profile = profileFrom(options);
   const written = [];
 
@@ -254,6 +336,17 @@ function emit(scan, options) {
       process.stderr.write(`${red('CBOM failed validation:')}\n${check.errors.map((e) => `  ${e}`).join('\n')}\n`);
     }
     written.push(write(options.cbom, `${JSON.stringify(bom, null, 2)}\n`));
+  }
+
+  if (options.sarif && options.sarif !== true) {
+    // Code scanning shows what needs acting on, so a baseline narrows the file
+    // as well as the exit code.
+    const sarif = buildSarif(scan, { findings: gated || scan.findings });
+    const check = validateSarif(sarif);
+    if (!check.valid) {
+      process.stderr.write(`${red('SARIF failed validation:')}\n${check.errors.slice(0, 5).map((e) => `  ${e}`).join('\n')}\n`);
+    }
+    written.push(write(options.sarif, `${JSON.stringify(sarif, null, 2)}\n`));
   }
 
   const model = assemble(scan, profile);
@@ -456,6 +549,7 @@ async function commandConsole(options) {
 
 const COMMANDS = {
   scan: commandScan,
+  baseline: commandBaseline,
   cert: commandCert,
   certs: commandCert,
   tls: commandTls,
