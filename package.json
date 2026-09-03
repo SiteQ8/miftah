@@ -1,0 +1,59 @@
+{
+  "name": "miftah",
+  "version": "0.1.0",
+  "description": "Cryptographic inventory and post-quantum readiness. Scans code, config, certificates, TLS endpoints and SSH hosts, writes a CycloneDX 1.6 CBOM, scores quantum risk and plans the migration to ML-KEM and ML-DSA.",
+  "type": "module",
+  "bin": {
+    "miftah": "bin/miftah.js"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./rules": "./src/rules.js",
+    "./cbom": "./src/cbom.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "examples",
+    "skill",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/",
+    "check": "node --check bin/miftah.js"
+  },
+  "keywords": [
+    "cbom",
+    "cyclonedx",
+    "post-quantum",
+    "pqc",
+    "ml-kem",
+    "ml-dsa",
+    "cryptography",
+    "cryptographic-inventory",
+    "crypto-agility",
+    "quantum-risk",
+    "mosca",
+    "harvest-now-decrypt-later",
+    "tls",
+    "x509",
+    "security",
+    "compliance",
+    "sbom"
+  ],
+  "author": "SiteQ8",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SiteQ8/miftah.git"
+  },
+  "homepage": "https://siteq8.github.io/miftah/",
+  "bugs": {
+    "url": "https://github.com/SiteQ8/miftah/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,17 @@
+# Fixture configuration.
+server:
+  tls:
+    minimum_version: TLSv1.1
+    ciphers: "ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:RC4-MD5"
+  hsts: true
+
+crypto:
+  hash: sha256
+  cipher: aes-256-gcm
+  kdf:
+    algorithm: pbkdf2
+    iterations: 10000
+
+secrets:
+  signing_key: "c2VjcmV0LXNpZ25pbmcta2V5LWZvci10ZXN0aW5n"
+  api_key: "${API_KEY}"

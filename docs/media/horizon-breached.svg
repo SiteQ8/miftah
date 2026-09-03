@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260" role="img" aria-label="Quantum horizon">
+<rect width="900" height="260" fill="#faf8f3"/>
+<line x1="92" y1="188" x2="860" y2="188" stroke="#d9d3c6" stroke-width="1"/>
+<line x1="92.0" y1="188" x2="92.0" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="92.0" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2026</text>
+<line x1="178.3" y1="188" x2="178.3" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="178.3" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2028</text>
+<line x1="264.6" y1="188" x2="264.6" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="264.6" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2030</text>
+<line x1="350.9" y1="188" x2="350.9" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="350.9" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2032</text>
+<line x1="437.2" y1="188" x2="437.2" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="437.2" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2034</text>
+<line x1="523.5" y1="188" x2="523.5" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="523.5" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2036</text>
+<line x1="609.8" y1="188" x2="609.8" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="609.8" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2038</text>
+<line x1="696.0" y1="188" x2="696.0" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="696.0" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2040</text>
+<line x1="782.3" y1="188" x2="782.3" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="782.3" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2042</text>
+<rect x="365.1" y="82" width="374.1" height="82" fill="#a8341f" fill-opacity="0.10"/>
+<rect x="92.0" y="104" width="215.7" height="38" fill="#a8791c" fill-opacity="0.85"/>
+<rect x="307.7" y="104" width="431.5" height="38" fill="#1c2733" fill-opacity="0.82"/>
+<line x1="365.1" y1="62" x2="365.1" y2="188" stroke="#7a2f1c" stroke-width="2" stroke-dasharray="6 4"/>
+<circle cx="365.1" cy="62.0" r="4" fill="#7a2f1c"/>
+<text x="373.1" y="54" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="14" font-weight="bold" fill="#7a2f1c" text-anchor="start">Quantum horizon 2033</text>
+<text x="199.9" y="128" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="13" fill="#ffffff" text-anchor="middle">Migration 5</text>
+<text x="523.5" y="128" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="13" fill="#ffffff" text-anchor="middle">Data must stay secret 10</text>
+<text x="552.2" y="168" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="13" font-weight="bold" fill="#a8341f" text-anchor="middle">Exposed window 8.67 years</text>
+<text x="92" y="90" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="start">Today</text>
+</svg>
