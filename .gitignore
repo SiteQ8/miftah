@@ -1,8 +1,11 @@
 node_modules/
 *.tgz
 .DS_Store
-scan.json
-cbom.json
-report.html
-report.md
-console.html
+
+# Scratch output at the repository root only. The generated site under docs/
+# is committed on purpose, so these patterns must stay anchored.
+/scan.json
+/cbom.json
+/report.html
+/report.md
+/console.html
