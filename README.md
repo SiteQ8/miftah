@@ -127,7 +127,7 @@ Fingerprints deliberately exclude the line number. Code moves constantly, and a 
 miftah baseline . --prune     # drop entries whose findings are fixed
 ```
 
-Ready to copy: [GitHub Actions](examples/ci/github-actions.yml), [GitLab CI](examples/ci/gitlab-ci.yml), [a pre commit hook](examples/ci/pre-commit.sh).
+Ready to copy: [GitHub Actions](examples/ci/github-actions.yml), [GitLab CI](examples/ci/gitlab-ci.yml), [a pre commit hook](examples/ci/pre-commit.sh). There is a walkthrough with the same steps at [siteq8.github.io/miftah/start.html](https://siteq8.github.io/miftah/start.html), including what to do when the output looks wrong.
 
 ### SARIF
 
@@ -201,7 +201,7 @@ cd miftah
 node --test "test/*.test.js"
 ```
 
-124 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
+125 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
 
 ---
 

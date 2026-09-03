@@ -3,7 +3,7 @@
 What cryptography do we run, and what breaks first.
 
 Target: `/home/claude/miftah/examples/sample-estate`
-Generated: 2026-09-03T11:13:51.668Z
+Generated: 2026-09-03T11:29:41.629Z
 
 ## Summary
 
