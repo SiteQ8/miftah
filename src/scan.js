@@ -94,6 +94,12 @@ const LOCKFILES = new Set([
   'Cargo.lock', 'go.sum', 'gradle.lockfile', 'pubspec.lock'
 ]);
 
+const OWN_OUTPUT = /^(?:\.miftah-baseline\.json|miftah-baseline\.json|cbom\.json|scan\.json|[^/\\]*\.sarif)$/i;
+
+export function isOwnOutput(file) {
+  return OWN_OUTPUT.test(path.basename(file));
+}
+
 export function isLockfile(file) {
   return LOCKFILES.has(path.basename(file));
 }
@@ -346,6 +352,10 @@ export function scanTree(root, options = {}) {
       continue;
     }
     if (isLockfile(file) && options.lockfiles !== true) {
+      skipped += 1;
+      continue;
+    }
+    if (isOwnOutput(file)) {
       skipped += 1;
       continue;
     }

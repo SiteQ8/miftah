@@ -1,0 +1,22 @@
+# Miftah in GitLab CI.
+#
+# Record a baseline first, or the job fails from the first pipeline:
+#
+#   npx github:SiteQ8/miftah baseline .
+#   git add .miftah-baseline.json && git commit -m "Accept current cryptography"
+
+miftah:
+  image: node:20-alpine
+  stage: test
+  script:
+    - npx --yes github:SiteQ8/miftah scan .
+        --baseline .miftah-baseline.json
+        --sarif miftah.sarif
+        --cbom cbom.json
+        --fail-on high
+  artifacts:
+    when: always
+    paths:
+      - miftah.sarif
+      - cbom.json
+    expire_in: 30 days

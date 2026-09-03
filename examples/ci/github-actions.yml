@@ -1,0 +1,60 @@
+# Miftah in GitHub Actions.
+#
+# Copy this to .github/workflows/miftah.yml in your repository.
+#
+# Before the first run, record what is already there so the build fails only on
+# what arrives after today:
+#
+#   npx github:SiteQ8/miftah baseline .
+#   git add .miftah-baseline.json && git commit -m "Accept current cryptography"
+#
+# Without that step the job fails from the first run and never stops, and the
+# usual outcome is that somebody deletes the workflow.
+
+name: Cryptographic inventory
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Nothing in the tree changed, but the horizon moved a week closer.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  miftah:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Scan
+        run: |
+          npx --yes github:SiteQ8/miftah scan . \
+            --baseline .miftah-baseline.json \
+            --sarif miftah.sarif \
+            --cbom cbom.json \
+            --fail-on high
+
+      # Uploaded even when the scan step fails, or a failing build hides the
+      # very findings that caused it.
+      - name: Upload to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: miftah.sarif
+          category: miftah
+
+      - name: Keep the inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cbom
+          path: cbom.json

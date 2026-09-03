@@ -104,6 +104,39 @@ miftah scan . --shelf-life 25 --migration 7 --horizon 2035 --exposure internal
 
 ---
 
+## Getting it into CI without it being deleted
+
+A scanner that fails the build on everything it finds is removed from the pipeline within a week, because on any codebase with history it fails from the first run and never stops. So record what is already there first:
+
+```bash
+npx github:SiteQ8/miftah baseline .
+git add .miftah-baseline.json && git commit -m "Accept current cryptography"
+```
+
+From then on the build fails only on what arrives after today:
+
+```bash
+miftah scan . --baseline .miftah-baseline.json --fail-on high --sarif miftah.sarif
+```
+
+Nothing is hidden. Every accepted finding still appears in the JSON, the CBOM and the report, and the summary always says how many the baseline absorbed and how many have been fixed since. The baseline file lists the rule, file and title beside each hash, so it can be read in a pull request rather than rubber stamped.
+
+Fingerprints deliberately exclude the line number. Code moves constantly, and a baseline that expires on every refactor teaches people to regenerate it without reading the diff.
+
+```bash
+miftah baseline . --prune     # drop entries whose findings are fixed
+```
+
+Ready to copy: [GitHub Actions](examples/ci/github-actions.yml), [GitLab CI](examples/ci/gitlab-ci.yml), [a pre commit hook](examples/ci/pre-commit.sh).
+
+### SARIF
+
+`--sarif miftah.sarif` writes SARIF 2.1.0, validated against the published schema, so findings land in GitHub code scanning, GitLab or Azure DevOps rather than in a terminal nobody reads twice. Severity is carried as `security-severity` because that is what GitHub renders, and every result carries a stable fingerprint so one alert survives a refactor instead of closing and reopening.
+
+With a baseline in place, code scanning shows only what is new.
+
+---
+
 ## The CBOM
 
 The inventory is written as CycloneDX 1.6 with every asset typed `cryptographic-asset`, carrying the registered OID, the CycloneDX primitive, the NIST post quantum security level where one applies, and `evidence.occurrences` linking each asset back to the file and line it was found on.
@@ -168,7 +201,7 @@ cd miftah
 node --test "test/*.test.js"
 ```
 
-105 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
+124 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
 
 ---
 
