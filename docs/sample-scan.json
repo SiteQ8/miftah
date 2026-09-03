@@ -1,11 +1,13 @@
 {
   "target": "/home/claude/miftah/examples/sample-estate",
-  "startedAt": "2026-09-03T11:59:58.381Z",
-  "durationMs": 23,
+  "startedAt": "2026-09-03T12:08:11.482Z",
+  "durationMs": 22,
   "filesFound": 7,
   "filesScanned": 7,
   "filesSkipped": 0,
   "filesIgnored": 0,
+  "manifestsRead": 0,
+  "dependenciesRead": 0,
   "ignoreRules": [],
   "findings": [
     {
@@ -1004,6 +1006,7 @@
       "evidence": "return crypto.pbkdf2Sync(password, salt, 600000, 32, 'sha256');"
     }
   ],
+  "dependencies": [],
   "assets": [
     {
       "id": "DES",

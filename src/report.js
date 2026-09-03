@@ -211,6 +211,8 @@ function table(headers, rows, align = []) {
   return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
 }
 
+const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+
 export function toHtml(model, locale = 'en') {
   const L = (key, vars) => t(locale, key, vars);
   const dir = STRINGS[locale] ? STRINGS[locale].dir : 'ltr';
@@ -360,6 +362,24 @@ ${styles(dir)}
     <h2>${escapeHtml(L('sectionHorizon'))}</h2>
     <figure>${composition}</figure>
   </section>
+
+  ${(scan.dependencies || []).length ? `<section id="dependencies">
+    <h2>${escapeHtml(L('sectionDependencies'))}</h2>
+    <p>${escapeHtml(L('dependenciesExplain'))}</p>
+    ${table(
+      [L('colLibrary'), L('colEcosystem'), L('colVersion'), L('colProvides'), L('colQuantum'), L('colAdvice')],
+      [...scan.dependencies]
+        .sort((a, b) => (SEVERITY_ORDER[a.severity] || 9) - (SEVERITY_ORDER[b.severity] || 9))
+        .map((dep) => [
+          `<strong>${escapeHtml(dep.name)}</strong>`,
+          escapeHtml(dep.ecosystem),
+          `<code>${escapeHtml(dep.version || '')}</code>`,
+          escapeHtml((dep.provides || []).join(', ')),
+          quantumChip(L(`quantum.${dep.quantum}`), dep.quantum),
+          escapeHtml(dep.advice)
+        ])
+    )}
+  </section>` : ''}
 
   <section id="inventory">
     <h2>${escapeHtml(L('sectionInventory'))}</h2>

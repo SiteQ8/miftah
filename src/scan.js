@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { RULES, SCANNABLE, SCANNABLE_NAMES, SKIP_DIRS, SEVERITY_WEIGHT } from './rules.js';
+import { isManifest, scanDependencies } from './deps.js';
 import { lookup, gradeModulus, CLASSICAL, QUANTUM } from './catalog.js';
 
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -31,7 +32,7 @@ export function walk(root, options = {}) {
         if (skip.has(item.name)) continue;
         visit(full, depth + 1);
       } else if (item.isFile()) {
-        if (isScannable(item.name)) files.push(full);
+        if (isScannable(item.name) || isManifest(item.name)) files.push(full);
       }
     }
   }
@@ -443,6 +444,7 @@ export function scanTree(root, options = {}) {
   let scanned = 0;
   let skipped = 0;
   let ignored = 0;
+  const manifests = [];
   const ignoreRules = options.ignoreFile === false ? [] : loadIgnore(root);
 
   for (const file of files) {
@@ -468,6 +470,7 @@ export function scanTree(root, options = {}) {
       skipped += 1;
       continue;
     }
+    if (isManifest(file)) manifests.push(file);
     if (isLockfile(file) && options.lockfiles !== true) {
       skipped += 1;
       continue;
@@ -485,6 +488,18 @@ export function scanTree(root, options = {}) {
     findings.push(...scanText(text, relative, options));
   }
 
+  // Manifests are read structurally rather than line by line, and their
+  // findings join the same list so one gate, one report and one CBOM cover the
+  // whole estate instead of two half pictures.
+  const deps = options.dependencies === false
+    ? { dependencies: [], findings: [], manifests: [] }
+    : scanDependencies(manifests.map((file) => ({ toString: () => file, valueOf: () => file })).map(String));
+  const allFindings = findings.concat(
+    deps.findings.map((finding) => Object.assign(finding, {
+      file: path.relative(root, finding.file) || path.basename(finding.file)
+    }))
+  );
+
   return {
     target: path.resolve(root),
     startedAt: new Date(started).toISOString(),
@@ -493,9 +508,12 @@ export function scanTree(root, options = {}) {
     filesScanned: scanned,
     filesSkipped: skipped,
     filesIgnored: ignored,
+    manifestsRead: manifests.length,
+    dependenciesRead: deps.dependencies.length,
     ignoreRules: ignoreRules.map((r) => r.pattern),
-    findings,
-    assets: inventory(findings)
+    findings: allFindings,
+    dependencies: deps.dependencies,
+    assets: inventory(allFindings)
   };
 }
 

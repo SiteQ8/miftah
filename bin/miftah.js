@@ -157,6 +157,15 @@ function printSummary(scan, profile) {
     process.stdout.write(`  Files read           ${scan.filesScanned}\n`);
   }
   process.stdout.write(`  Cryptographic assets ${estate.counts.assets}\n`);
+  const deps = scan.dependencies || [];
+  if (deps.length) {
+    const attention = deps.filter((d) => d.severity !== 'info').length;
+    const pq = deps.filter((d) => d.quantum === 'resistant').length;
+    const parts = [`${deps.length} recognised`];
+    if (attention) parts.push(amber(`${attention} needing attention`));
+    if (pq) parts.push(green(`${pq} post quantum`));
+    process.stdout.write(`  Crypto dependencies  ${parts.join(', ')}\n`);
+  }
   process.stdout.write(`  Findings             ${(scan.findings || []).length}  `);
   process.stdout.write(
     `${red(`critical ${counts.critical}`)}  ${red(`high ${counts.high}`)}  ` +
