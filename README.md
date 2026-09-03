@@ -107,6 +107,33 @@ miftah report scan.json --lang ar --html تقرير.html
 miftah console scan.json --out console.html
 ```
 
+### Put the assumptions where they can be argued with
+
+The three numbers decide every score here, and until they were committed they lived only in whoever wrote the pipeline. Assumptions nobody can see are assumptions nobody can argue with, and the whole point of drawing the horizon as a line rather than a fact is that it should be argued with.
+
+`.miftahrc.json`, read from the scanned root:
+
+```json
+{
+  "profile": {
+    "shelfLife": 25,
+    "migrationYears": 7,
+    "crqcYear": 2035,
+    "exposure": "internal"
+  },
+  "failOn": "high",
+  "vendors": "suppliers.txt"
+}
+```
+
+A flag typed today beats a file written last year, and every run says where each value came from:
+
+```
+10 years of secrecy, 5 years to migrate, horizon 2033, internet exposure using defaults throughout.
+```
+
+A file that will not parse is refused rather than ignored, because falling back to defaults silently would score the estate against assumptions nobody chose. `--no-config` skips it deliberately.
+
 Adjust the assumptions when the defaults do not fit your data:
 
 ```bash
@@ -248,7 +275,7 @@ cd miftah
 node --test "test/*.test.js"
 ```
 
-167 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
+177 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
 
 ---
 

@@ -1,0 +1,9 @@
+{
+  "_comment": "The three numbers that decide every score in this tool. Committed so they can be argued with in a pull request rather than set once in a pipeline and forgotten.",
+  "profile": {
+    "shelfLife": 10,
+    "migrationYears": 5,
+    "crqcYear": 2033,
+    "exposure": "internet"
+  }
+}

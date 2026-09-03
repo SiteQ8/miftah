@@ -12,13 +12,29 @@ import { lookup, gradeModulus, CLASSICAL, QUANTUM } from './catalog.js';
 const MAX_BYTES = 2 * 1024 * 1024;
 const MAX_LINE = 4000;
 
+export const MAX_FILES = 20000;
+export const MAX_DEPTH = 24;
+
+// The walk stops at a file count and a depth. It used to stop silently, which
+// on a monorepo would report a clean scan of the first twenty thousand files
+// and say nothing about the rest. A scanner that stops early without saying so
+// produces something that reads like a verdict.
 export function walk(root, options = {}) {
   const skip = new Set([...SKIP_DIRS, ...(options.exclude || [])]);
   const files = [];
-  const limit = options.maxFiles || 20000;
+  const limit = options.maxFiles || MAX_FILES;
+  const maxDepth = options.maxDepth || MAX_DEPTH;
+  const limits = { files: false, depth: [] };
 
   function visit(dir, depth) {
-    if (depth > 24 || files.length >= limit) return;
+    if (files.length >= limit) {
+      limits.files = true;
+      return;
+    }
+    if (depth > maxDepth) {
+      limits.depth.push(dir);
+      return;
+    }
     let entries;
     try {
       entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -26,7 +42,10 @@ export function walk(root, options = {}) {
       return;
     }
     for (const item of entries) {
-      if (files.length >= limit) return;
+      if (files.length >= limit) {
+        limits.files = true;
+        return;
+      }
       const full = path.join(dir, item.name);
       if (item.isSymbolicLink()) continue;
       if (item.isDirectory()) {
@@ -39,8 +58,13 @@ export function walk(root, options = {}) {
   }
 
   const stat = fs.statSync(root);
-  if (stat.isFile()) return [root];
-  visit(root, 0);
+  if (stat.isFile()) {
+    files.push(root);
+  } else {
+    visit(root, 0);
+  }
+
+  files.limits = limits;
   return files;
 }
 
@@ -630,6 +654,14 @@ export function scanTree(root, options = {}) {
     startedAt: new Date(started).toISOString(),
     durationMs: Date.now() - started,
     filesFound: files.length,
+    truncated: Boolean(files.limits && (files.limits.files || files.limits.depth.length)),
+    limits: files.limits
+      ? {
+        fileLimit: files.limits.files ? (options.maxFiles || MAX_FILES) : null,
+        depthLimit: files.limits.depth.length ? (options.maxDepth || MAX_DEPTH) : null,
+        directoriesNotEntered: files.limits.depth.length
+      }
+      : null,
     filesScanned: scanned,
     filesSkipped: skipped,
     filesIgnored: ignored,
