@@ -3,7 +3,7 @@
 ما التشفير الذي نشغله فعلا وما الذي ينكسر أولا.
 
 الهدف: `/home/claude/miftah/examples/sample-estate`
-تاريخ الإصدار: 2026-09-03T12:08:11.509Z
+تاريخ الإصدار: 2026-09-03T12:22:29.730Z
 
 ## الخلاصة
 
@@ -16,7 +16,7 @@
 | أصول مقاومة للكم | 3 |
 | النتائج | 47 |
 | الملفات المقروءة | 7 |
-| درجة المرونة | 25 / 100 |
+| درجة المرونة | 22 / 100 محسوبة على 9 بنود قابلة للتقييم من 14، أما البقية فتحتاج إلى حكم بشري |
 
 حرجة 5, عالية 21, متوسطة 6, منخفضة 3, معلومة 12.
 
@@ -180,12 +180,12 @@ Move certificates, code signing and firmware roots of trust to ML-DSA or a hash 
 
 ## مرونة التشفير
 
-درجة المرونة: 25 / 100
+درجة المرونة: 22 / 100 محسوبة على 9 بنود قابلة للتقييم من 14، أما البقية فتحتاج إلى حكم بشري
 
 | الحالة | البند | التوصية |
 | --- | --- | --- |
 | مطبق | A cryptographic inventory exists and is current | 21 cryptographic assets identified |
-| يحتاج مراجعة بشرية | The inventory is machine readable and regenerated automatically | Confirm miftah runs in the pipeline, not only by hand |
+| غير مطبق | The inventory is machine readable and regenerated automatically | No pipeline configuration found, so the inventory is a snapshot |
 | غير مطبق | No broken primitive remains in the estate | 11 occurrences of broken primitives |
 | غير مطبق | No key material is held in source or configuration | 1 occurrences of embedded key material |
 | غير مطبق | Algorithm choices are configuration, not literals | 24 percent of algorithm references sit in configuration, the rest are hard coded |
@@ -194,7 +194,7 @@ Move certificates, code signing and firmware roots of trust to ML-DSA or a hash 
 | يحتاج مراجعة بشرية | Certificates carry SHA-256 or stronger and expire inside 398 days | No certificates inspected in this run |
 | غير مطبق | Randomness comes from a cryptographic source everywhere | 1 occurrences of weak randomness or static IVs |
 | غير مطبق | Transport refuses anything below TLS 1.2 | 1 occurrences permitting TLS 1.1 or below |
-| يحتاج مراجعة بشرية | A named owner is accountable for the migration | Name the owner and the review cadence |
+| يحتاج مراجعة بشرية | A named owner is accountable for the migration | No CODEOWNERS or security policy found. Name the owner and the review cadence |
 | يحتاج مراجعة بشرية | Suppliers have been asked for their post quantum timeline | Supply a vendor list with --vendors to track this |
 | يحتاج مراجعة بشرية | A rollback path exists for every algorithm change | Confirm each change can be reversed without a release |
 | يحتاج مراجعة بشرية | Protocol changes have been tested against signature and key size growth | Test with ML-DSA-65 sized artefacts before committing |

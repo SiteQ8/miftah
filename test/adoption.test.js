@@ -387,3 +387,78 @@ test('a tree with no manifests reports no dependencies rather than failing', () 
   assert.equal(result.findings.length, 1);
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+// ------------------------------------------------ certificates and vendors
+
+test('a certificate in the tree is graded, not merely walked past', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'miftah-ct-'));
+  execFileSync('openssl', [
+    'req', '-x509', '-nodes', '-newkey', 'rsa:1024', '-keyout', path.join(dir, 'k.key'),
+    '-out', path.join(dir, 'legacy.pem'), '-days', '20', '-subj', '/CN=legacy.test', '-sha1'
+  ], { stdio: 'ignore' });
+
+  const scan = scanTree(dir);
+  assert.equal(scan.certificatesRead, 1, 'the certificate was walked past without being graded');
+  const [cert] = scan.findings.filter((f) => f.rule === 'MFT-X002');
+  assert.ok(cert, 'no certificate finding was produced');
+  assert.equal(cert.severity, 'high');
+  assert.match(cert.evidence, /RSA-1024/);
+  assert.match(cert.evidence, /sha1WithRSAEncryption/);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('a key only PEM is not reported twice', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'miftah-key-'));
+  execFileSync('openssl', ['genrsa', '-out', path.join(dir, 'only.pem'), '2048'], { stdio: 'ignore' });
+  const scan = scanTree(dir);
+  assert.equal(scan.findings.filter((f) => f.rule === 'MFT-X002').length, 0,
+    'a private key was reported as a certificate');
+  assert.ok(scan.findings.some((f) => f.rule === 'MFT-K002'), 'the private key itself went unreported');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('a vendor list reads both shapes', async () => {
+  const { parseVendors } = await import('../src/deps.js');
+  const plain = parseVendors('Acme HSM | committed | 2027\nRegional CA | asked\nCore banking\n# comment');
+  assert.equal(plain.length, 3);
+  assert.deepEqual(plain.map((v) => v.status), ['committed', 'asked', 'unknown']);
+
+  const json = parseVendors('[{"name":"Delta","target":"2028"},{"name":"Epsilon","status":"asked"}]');
+  assert.equal(json[0].status, 'committed', 'a published target should imply a commitment');
+  assert.equal(json[1].status, 'asked');
+});
+
+test('the supplier check grades the list rather than counting it', async () => {
+  const { runChecklist } = await import('../src/agility.js');
+  const base = { findings: [], assets: [], signals: {} };
+  const of = (vendors) => runChecklist({ ...base, vendors }).results.find((c) => c.id === 'AGL-12');
+
+  assert.equal(of([]).status, 'manual');
+  assert.equal(of([{ status: 'unknown' }, { status: 'unknown' }]).status, 'fail');
+  assert.equal(of([{ status: 'committed' }, { status: 'asked' }]).status, 'partial');
+  assert.equal(of([{ status: 'committed' }]).status, 'pass');
+});
+
+test('repository signals answer checks that used to be manual', async () => {
+  const { runChecklist } = await import('../src/agility.js');
+  const base = { findings: [], assets: [] };
+  const at = (id, signals) => runChecklist({ ...base, signals }).results.find((c) => c.id === id);
+
+  assert.equal(at('AGL-02', { ci: true, ciCryptoInventory: true }).status, 'pass');
+  assert.equal(at('AGL-02', { ci: true, baseline: true }).status, 'partial');
+  assert.equal(at('AGL-02', {}).status, 'fail');
+  assert.equal(at('AGL-11', { codeowners: true, securityPolicy: true }).status, 'partial');
+  assert.equal(at('AGL-11', {}).status, 'manual');
+});
+
+test('the agility score never claims more checks than it answered', async () => {
+  const { runChecklist } = await import('../src/agility.js');
+  const result = runChecklist(scan);
+  assert.ok(result.scorable < result.results.length, 'this estate should have unanswerable checks');
+  assert.ok(result.scorable >= 8, `only ${result.scorable} checks could be answered`);
+  const manual = result.results.filter((c) => c.status === 'manual').length;
+  assert.equal(result.scorable + manual, result.results.length,
+    'the scorable count and the manual count do not add up to the checklist');
+});

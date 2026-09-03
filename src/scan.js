@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { RULES, SCANNABLE, SCANNABLE_NAMES, SKIP_DIRS, SEVERITY_WEIGHT } from './rules.js';
 import { isManifest, scanDependencies } from './deps.js';
+import { readCertificates, describeCertificate } from './certs.js';
 import { lookup, gradeModulus, CLASSICAL, QUANTUM } from './catalog.js';
 
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -32,7 +33,7 @@ export function walk(root, options = {}) {
         if (skip.has(item.name)) continue;
         visit(full, depth + 1);
       } else if (item.isFile()) {
-        if (isScannable(item.name) || isManifest(item.name)) files.push(full);
+        if (isScannable(item.name) || isManifest(item.name) || isSignalFile(item.name)) files.push(full);
       }
     }
   }
@@ -111,6 +112,87 @@ export function isOwnOutput(file) {
 // ---------------------------------------------------------------------------
 
 export const IGNORE_FILE = '.miftahignore';
+
+// Certificates found while walking. The grader already existed and was only
+// ever reachable through --certs, so a SHA-1 signed key sitting in the
+// repository produced nothing at all.
+const CERT_EXT = new Set(['.pem', '.crt', '.cer', '.der', '.p7b']);
+
+// Evidence that the inventory is a control rather than a snapshot, and that
+// somebody is accountable for it.
+const CI_PATH = /(?:^|[\\/])(?:\.github[\\/]workflows|\.gitlab-ci\.yml|\.circleci|azure-pipelines|Jenkinsfile|\.drone\.yml|bitbucket-pipelines\.yml)/i;
+const INVENTORY_HINT = /\b(?:miftah|cyclonedx|cbom|sbom|syft|cdxgen|dependency-track)\b/i;
+
+function recordSignal(signals, root, file) {
+  const relative = path.relative(root, file).replace(/\\/g, '/');
+  const name = path.basename(file);
+
+  if (name === DEFAULT_BASELINE_NAME) signals.baseline = true;
+  if (/^CODEOWNERS$/i.test(name)) signals.codeowners = true;
+  if (/^SECURITY(\.md|\.txt)?$/i.test(name)) signals.securityPolicy = true;
+
+  if (!CI_PATH.test(relative)) return;
+  signals.ci = true;
+  if (signals.ciCryptoInventory) return;
+  try {
+    const stat = fs.statSync(file);
+    if (stat.size > MAX_BYTES) return;
+    if (INVENTORY_HINT.test(fs.readFileSync(file, 'utf8'))) signals.ciCryptoInventory = true;
+  } catch {
+    // A CI file we cannot read tells us nothing either way.
+  }
+}
+
+const DEFAULT_BASELINE_NAME = '.miftah-baseline.json';
+
+const SIGNAL_NAMES = new Set(['CODEOWNERS', 'SECURITY.md', 'SECURITY.txt', 'SECURITY', '.miftah-baseline.json']);
+
+export function isSignalFile(name) {
+  return SIGNAL_NAMES.has(name) || SIGNAL_NAMES.has(String(name).toUpperCase());
+}
+
+export function looksLikeCertificate(file) {
+  return CERT_EXT.has(path.extname(file).toLowerCase());
+}
+
+export function gradeCertificateFile(file, relative) {
+  const described = [];
+  const findings = [];
+  let parsed;
+  try {
+    parsed = readCertificates(file);
+  } catch {
+    return { described, findings };
+  }
+
+  for (const cert of parsed) {
+    // A .pem holding only a private key is not a certificate. That case is
+    // already reported by the key material rule and saying so twice is worse
+    // than saying it once.
+    if (!cert || cert.parseError) continue;
+    const detail = describeCertificate(cert, relative);
+    if (detail.error) continue;
+    described.push(detail);
+
+    findings.push({
+      rule: 'MFT-X002',
+      title: `Certificate ${detail.publicKey.name} signed with ${detail.signatureAlgorithm}`,
+      severity: detail.severity,
+      algorithm: detail.publicKey.algorithm || null,
+      assetLabel: detail.publicKey.name,
+      assetPrimitive: detail.publicKey.algorithm === 'RSA' ? 'pke' : 'signature',
+      classical: detail.signature.classical,
+      quantum: detail.quantum,
+      advice: detail.signature.advice,
+      file: relative,
+      line: 1,
+      column: 1,
+      detail: `${detail.subject || ''} expires in ${detail.daysLeft} days`.trim(),
+      evidence: `${detail.publicKey.name}, ${detail.signatureAlgorithm}, ${detail.daysLeft} days left`
+    });
+  }
+  return { described, findings };
+}
 
 function patternToRegExp(pattern) {
   const directory = pattern.endsWith('/');
@@ -445,6 +527,8 @@ export function scanTree(root, options = {}) {
   let skipped = 0;
   let ignored = 0;
   const manifests = [];
+  const certFiles = [];
+  const signals = { ci: false, ciCryptoInventory: false, baseline: false, codeowners: false, securityPolicy: false };
   const ignoreRules = options.ignoreFile === false ? [] : loadIgnore(root);
 
   for (const file of files) {
@@ -471,6 +555,8 @@ export function scanTree(root, options = {}) {
       continue;
     }
     if (isManifest(file)) manifests.push(file);
+    if (looksLikeCertificate(file)) certFiles.push(file);
+    recordSignal(signals, root, file);
     if (isLockfile(file) && options.lockfiles !== true) {
       skipped += 1;
       continue;
@@ -488,13 +574,26 @@ export function scanTree(root, options = {}) {
     findings.push(...scanText(text, relative, options));
   }
 
+  // Certificates are parsed rather than pattern matched, so a signature
+  // algorithm and an expiry date are read from the DER rather than guessed.
+  const certificates = [];
+  const certFindings = [];
+  if (options.certificates !== false) {
+    for (const file of certFiles) {
+      const relative = path.relative(root, file) || path.basename(file);
+      const graded = gradeCertificateFile(file, relative);
+      certificates.push(...graded.described);
+      certFindings.push(...graded.findings);
+    }
+  }
+
   // Manifests are read structurally rather than line by line, and their
   // findings join the same list so one gate, one report and one CBOM cover the
   // whole estate instead of two half pictures.
   const deps = options.dependencies === false
     ? { dependencies: [], findings: [], manifests: [] }
     : scanDependencies(manifests.map((file) => ({ toString: () => file, valueOf: () => file })).map(String));
-  const allFindings = findings.concat(
+  const allFindings = findings.concat(certFindings).concat(
     deps.findings.map((finding) => Object.assign(finding, {
       file: path.relative(root, finding.file) || path.basename(finding.file)
     }))
@@ -510,9 +609,12 @@ export function scanTree(root, options = {}) {
     filesIgnored: ignored,
     manifestsRead: manifests.length,
     dependenciesRead: deps.dependencies.length,
+    certificatesRead: certificates.length,
+    signals,
     ignoreRules: ignoreRules.map((r) => r.pattern),
     findings: allFindings,
     dependencies: deps.dependencies,
+    certificates,
     assets: inventory(allFindings)
   };
 }

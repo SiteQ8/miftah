@@ -20,7 +20,19 @@ export const CHECKS = [
     id: 'AGL-02',
     title: 'The inventory is machine readable and regenerated automatically',
     why: 'A CBOM in a spreadsheet is a snapshot. A CBOM in CI is a control.',
-    evaluate: () => ({ status: STATUS.MANUAL, detail: 'Confirm miftah runs in the pipeline, not only by hand' })
+    evaluate: (scan) => {
+      const signals = scan.signals || {};
+      if (signals.ciCryptoInventory) {
+        return { status: STATUS.PASS, detail: 'A pipeline configuration references an inventory tool' };
+      }
+      if (signals.ci && signals.baseline) {
+        return { status: STATUS.PARTIAL, detail: 'A pipeline and a baseline exist, but no inventory step was found in the pipeline' };
+      }
+      if (signals.ci) {
+        return { status: STATUS.FAIL, detail: 'A pipeline exists and does not generate an inventory' };
+      }
+      return { status: STATUS.FAIL, detail: 'No pipeline configuration found, so the inventory is a snapshot' };
+    }
   },
   {
     id: 'AGL-03',
@@ -120,15 +132,42 @@ export const CHECKS = [
     id: 'AGL-11',
     title: 'A named owner is accountable for the migration',
     why: 'Every cryptographic migration that succeeded had one. Every one that stalled did not.',
-    evaluate: () => ({ status: STATUS.MANUAL, detail: 'Name the owner and the review cadence' })
+    evaluate: (scan) => {
+      // Ownership is organisational, but CODEOWNERS and a security policy are
+      // the closest evidence a repository can carry, so read them rather than
+      // asking the reader to go and look.
+      const signals = scan.signals || {};
+      if (signals.codeowners && signals.securityPolicy) {
+        return { status: STATUS.PARTIAL, detail: 'CODEOWNERS and a security policy exist. Confirm a person, not a team, owns the migration' };
+      }
+      if (signals.codeowners || signals.securityPolicy) {
+        return { status: STATUS.PARTIAL, detail: 'Some ownership is recorded. Confirm who owns the cryptographic migration specifically' };
+      }
+      return { status: STATUS.MANUAL, detail: 'No CODEOWNERS or security policy found. Name the owner and the review cadence' };
+    }
   },
   {
     id: 'AGL-12',
     title: 'Suppliers have been asked for their post quantum timeline',
     why: 'Most of the estate is bought, not built. Their schedule becomes yours.',
-    evaluate: (scan) => (scan.vendors && scan.vendors.length
-      ? { status: STATUS.PARTIAL, detail: `${scan.vendors.length} suppliers listed, confirm each has a published date` }
-      : { status: STATUS.MANUAL, detail: 'Supply a vendor list with --vendors to track this' })
+    evaluate: (scan) => {
+      const vendors = scan.vendors || [];
+      if (!vendors.length) {
+        return { status: STATUS.MANUAL, detail: 'Supply a vendor list with --vendors to track this' };
+      }
+      const committed = vendors.filter((v) => v.status === 'committed').length;
+      const asked = vendors.filter((v) => v.status === 'asked').length;
+      if (committed === vendors.length) {
+        return { status: STATUS.PASS, detail: `All ${vendors.length} suppliers have published a date` };
+      }
+      if (committed || asked) {
+        return {
+          status: STATUS.PARTIAL,
+          detail: `${committed} of ${vendors.length} suppliers have a date, ${asked} asked and waiting, ${vendors.length - committed - asked} not yet approached`
+        };
+      }
+      return { status: STATUS.FAIL, detail: `${vendors.length} suppliers listed and none has been asked` };
+    }
   },
   {
     id: 'AGL-13',
