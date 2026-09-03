@@ -22,6 +22,7 @@ import {
 } from '../src/baseline.js';
 import { buildSarif, validateSarif } from '../src/sarif.js';
 import { readVendors } from '../src/deps.js';
+import { diffScans, summariseDiff } from '../src/diff.js';
 
 const COLOUR = process.stdout.isTTY && !process.env.NO_COLOR;
 const paint = (code, text) => (COLOUR ? `\u001b[${code}m${text}\u001b[0m` : text);
@@ -83,6 +84,7 @@ Options
 Examples
   miftah scan . --cbom cbom.json --md CRYPTO.md --fail-on high
   miftah baseline .                       accept what is there today
+  miftah diff last-quarter.json now.json  how the estate moved
   miftah scan . --baseline .miftah-baseline.json --fail-on high --sarif out.sarif
   miftah scan ./service --endpoint api.example.com:443 --html report.html
   miftah tls example.com:443 --json tls.json
@@ -90,7 +92,7 @@ Examples
 `;
 
 function parseArgs(argv) {
-  const options = { _: [], exclude: [], endpoint: [] };
+  const options = { _: [], exclude: [], endpoint: [], ssh: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (!arg.startsWith('--')) {
@@ -111,7 +113,7 @@ function parseArgs(argv) {
       continue;
     }
     i += 1;
-    if (name === 'exclude' || name === 'endpoint') options[name].push(value);
+    if (name === 'exclude' || name === 'endpoint' || name === 'ssh') options[name].push(value);
     else options[name] = value;
   }
   return options;
@@ -245,6 +247,15 @@ async function commandScan(options) {
     }
   }
 
+  if (options.ssh.length) {
+    scan.sshEndpoints = [];
+    for (const endpoint of options.ssh) {
+      const result = await probeSsh(endpoint);
+      scan.sshEndpoints.push(result);
+      scan.findings.push(...result.findings);
+    }
+  }
+
   if (options.endpoint.length) {
     scan.endpoints = [];
     for (const endpoint of options.endpoint) {
@@ -257,7 +268,7 @@ async function commandScan(options) {
   }
 
   // Findings gathered after the tree walk still belong in the inventory.
-  if (options.certs || options.endpoint.length) {
+  if (options.certs || options.endpoint.length || options.ssh.length) {
     const { inventory } = await import('../src/scan.js');
     scan.assets = inventory(scan.findings);
   }
@@ -522,6 +533,72 @@ async function commandRoadmap(options) {
   return 0;
 }
 
+async function commandDiff(options) {
+  const [, beforeFile, afterFile] = options._;
+  if (!beforeFile || !afterFile) throw new Error('Give two scan results: miftah diff before.json after.json');
+  for (const file of [beforeFile, afterFile]) {
+    if (!fs.existsSync(file)) throw new Error(`No such file: ${file}`);
+  }
+
+  const before = JSON.parse(fs.readFileSync(beforeFile, 'utf8'));
+  const after = JSON.parse(fs.readFileSync(afterFile, 'utf8'));
+  const result = diffScans(before, after, { profile: profileFrom(options) });
+
+  if (options.json && options.json !== true) {
+    write(options.json, `${JSON.stringify(result, null, 2)}\n`);
+  }
+  if (options.quiet) return failDiff(result, options);
+
+  const arrow = (change, goodWhenPositive = true) => {
+    if (change === 0) return dim('no change');
+    const better = goodWhenPositive ? change > 0 : change < 0;
+    const text = `${change > 0 ? '+' : ''}${change}`;
+    return better ? green(text) : red(text);
+  };
+
+  process.stdout.write(`\n${bold('Posture change')}`);
+  if (result.elapsedDays !== null) process.stdout.write(`  ${dim(`${result.elapsedDays} days apart`)}`);
+  process.stdout.write(`\n${'-'.repeat(64)}\n`);
+  process.stdout.write(`  Readiness            ${result.readiness.before} to ${result.readiness.after}  ${arrow(result.readiness.change)}\n`);
+  process.stdout.write(`  Findings             ${result.before.findings} to ${result.after.findings}  ${green(`${result.findings.resolved.length} fixed`)}  ${result.findings.introduced.length ? red(`${result.findings.introduced.length} new`) : dim('0 new')}\n`);
+  process.stdout.write(`  Quantum broken       ${arrow(result.quantum.quantumBroken, false)}\n`);
+
+  // The number with no code change behind it, and the reason a quiet quarter is
+  // still a worse quarter.
+  if (result.horizon.marginLost > 0) {
+    process.stdout.write(`${'-'.repeat(64)}\n`);
+    process.stdout.write(`  ${amber('Margin lost to time')}  ${result.horizon.marginLost} years. `);
+    process.stdout.write(`Runway ${result.horizon.yearsBefore} to ${result.horizon.yearsAfter} years.\n`);
+    process.stdout.write(`  ${dim('The horizon is a fixed year, so standing still moves you toward it.')}\n`);
+  }
+
+  if (result.assets.worse.length) {
+    process.stdout.write(`\n  ${bold('Worse')}\n`);
+    for (const item of result.assets.worse) {
+      process.stdout.write(`    ${red(item.name.padEnd(26))} ${item.from} to ${item.to}\n`);
+    }
+  }
+  if (result.assets.better.length) {
+    process.stdout.write(`\n  ${bold('Better')}\n`);
+    for (const item of result.assets.better) {
+      process.stdout.write(`    ${green(item.name.padEnd(26))} ${item.from} to ${item.to}\n`);
+    }
+  }
+  if (result.assets.added.length) {
+    process.stdout.write(`\n  ${bold('New assets')}  ${result.assets.added.map((a) => a.name).join(', ')}\n`);
+  }
+  if (result.assets.removed.length) {
+    process.stdout.write(`\n  ${bold('Gone')}  ${result.assets.removed.map((a) => a.name).join(', ')}\n`);
+  }
+
+  process.stdout.write(`\n  ${summariseDiff(result)}\n\n`);
+  return failDiff(result, options);
+}
+
+function failDiff(result, options) {
+  return options['fail-on'] && result.regressed ? 1 : 0;
+}
+
 async function commandChecklist(options) {
   const scan = options._[1] ? readScan(options._[1]) : { findings: [], assets: [] };
   const result = runChecklist(scan);
@@ -569,6 +646,7 @@ async function commandConsole(options) {
 const COMMANDS = {
   scan: commandScan,
   baseline: commandBaseline,
+  diff: commandDiff,
   cert: commandCert,
   certs: commandCert,
   tls: commandTls,

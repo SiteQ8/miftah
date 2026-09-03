@@ -97,6 +97,9 @@ miftah cert /etc/ssl/certs/service.pem
 miftah tls example.com:443
 miftah ssh example.com:22
 
+# Or probe both as part of a scan, so one report covers the whole estate
+miftah scan . --endpoint example.com:443 --ssh example.com:22
+
 # Arabic report
 miftah report scan.json --lang ar --html تقرير.html
 
@@ -144,6 +147,23 @@ miftah baseline . --prune     # drop entries whose findings are fixed
 ```
 
 Ready to copy: [GitHub Actions](examples/ci/github-actions.yml), [GitLab CI](examples/ci/gitlab-ci.yml), [a pre commit hook](examples/ci/pre-commit.sh). There is a walkthrough with the same steps at [siteq8.github.io/miftah/start.html](https://siteq8.github.io/miftah/start.html), including what to do when the output looks wrong.
+
+### Watching the estate move
+
+A baseline answers whether this build is worse than the last one. A diff answers the question a steering committee asks, which is how the estate moved over a quarter.
+
+```bash
+miftah diff last-quarter.json now.json
+```
+
+It reports what was fixed, what arrived, which assets got worse, and one number that has no code change behind it at all:
+
+```
+  Margin lost to time  0.5 years. Runway 6.83 to 6.33 years.
+  The horizon is a fixed year, so standing still moves you toward it.
+```
+
+An estate that was left completely alone is measurably worse than it was, and a report that lists only changed files will never say so. `--fail-on` with `diff` exits non zero on a regression.
 
 ### SARIF
 
@@ -228,7 +248,7 @@ cd miftah
 node --test "test/*.test.js"
 ```
 
-155 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
+163 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
 
 ---
 
