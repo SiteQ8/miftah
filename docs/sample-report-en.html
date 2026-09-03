@@ -7,100 +7,207 @@
 <style>
 
 :root {
-  --ink: #1c2733;
-  --muted: #6d7b88;
-  --rule: #d9d3c6;
-  --paper: #faf8f3;
-  --brass: #a8791c;
-  --broken: #a8341f;
-  --resistant: #2f6b5e;
+  --vault: #0B1A24;
+  --vault-line: #1F4256;
+  --paper: #F2F4F5;
+  --paper-raised: #FFFFFF;
+  --paper-line: #D5DCE0;
+  --ink: #0B1A24;
+  --slate: #5A727F;
+  --on-vault: #E8EFF2;
+  --on-vault-dim: #8FA9B6;
+  --signal: #FFB020;
+  --live: #2FBF8F;
+  --alarm: #FF5A3C;
 }
+
 * { box-sizing: border-box; }
+
+html { overflow-x: hidden; }
+
 body {
   margin: 0;
+  max-width: 100%;
   background: var(--paper);
   color: var(--ink);
-  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
-  font-size: 17px;
-  line-height: 1.65;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
-main { max-width: 1000px; margin: 0 auto; padding: 56px 28px 80px; }
-.masthead { border-bottom: 3px double var(--rule); padding-bottom: 28px; margin-bottom: 32px; }
-.kicker { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.06em; color: var(--brass); }
-h1 { margin: 0 0 8px; font-size: clamp(30px, 5vw, 46px); line-height: 1.12; font-weight: 600; }
-.lede { margin: 0 0 20px; color: var(--muted); font-size: 19px; max-width: 62ch; }
-.meta { display: flex; flex-wrap: wrap; gap: 28px; margin: 0; }
-.meta div { margin: 0; }
-.meta dt { font-size: 12px; color: var(--muted); margin: 0 0 2px; }
-.meta dd { margin: 0; font-size: 14px; }
-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; background: rgba(28,39,51,0.05); padding: 1px 5px; border-radius: 3px; }
 
-.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-bottom: 48px; }
-.figure { background: var(--paper); padding: 20px 18px; display: flex; flex-direction: column; gap: 4px; }
-.figure-value { font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
-.headline .figure-value { font-size: 54px; color: var(--brass); }
-.figure-label { font-size: 12px; color: var(--muted); }
+.vault { background: var(--vault); color: var(--on-vault); padding: 0 32px 44px; }
+.vault > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
 
-section { margin-bottom: 52px; }
-h2 { font-size: 26px; margin: 0 0 14px; font-weight: 600; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
-h3 { font-size: 19px; margin: 28px 0 10px; font-weight: 600; }
-p { max-width: 72ch; }
-figure { margin: 22px 0; border: 1px solid var(--rule); overflow-x: auto; }
+.bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 22px 0 34px;
+}
+
+.brand { display: flex; align-items: baseline; }
+.wordmark { font-size: 19px; font-weight: 600; letter-spacing: 0.02em; margin-right: 12px; }
+.wordmark-ar { font-size: 19px; color: var(--signal); }
+
+.meta { display: flex; flex-wrap: wrap; margin: 0; font-size: 13px; min-width: 0; max-width: 100%; }
+.meta > div { margin-left: 26px; }
+.meta dt { color: var(--on-vault-dim); margin: 0 0 2px; }
+.meta dd { margin: 0; color: var(--on-vault); }
+.meta code { font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace; font-size: 12.5px; }
+
+.vault h1 { font-size: 21px; font-weight: 400; color: var(--on-vault-dim); margin: 0 0 18px; letter-spacing: 0; }
+
+.readout-number { display: flex; align-items: baseline; flex-wrap: wrap; }
+
+.huge {
+  font-size: 116px;
+  font-size: clamp(58px, 12vw, 128px);
+  font-weight: 300;
+  line-height: 0.88;
+  letter-spacing: -0.035em;
+  color: var(--signal);
+  margin-right: 16px;
+}
+
+.huge.clear { color: var(--live); }
+.huge-unit { font-size: 17px; color: var(--on-vault-dim); }
+
+.verdict { margin: 18px 0 0; max-width: 62ch; font-size: 17px; color: var(--on-vault); }
+.horizon-figure { margin: 28px 0 0; }
+.horizon-figure svg { display: block; width: 100%; height: auto; }
+.horizon-note { margin: 16px 0 0; max-width: 68ch; font-size: 14px; color: var(--on-vault-dim); }
+
+main { padding: 0 32px 80px; }
+main > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
+
+.figures {
+  display: -webkit-box;
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--paper-line);
+  margin-bottom: 40px;
+}
+
+@supports (display: grid) {
+  .figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+}
+
+.figure { flex: 1 1 140px; min-width: 140px; padding: 24px 20px 24px 0; }
+.figure-value { display: block; font-size: 34px; font-weight: 300; line-height: 1.05; letter-spacing: -0.02em; }
+.figure-label { display: block; font-size: 13px; color: var(--slate); margin-top: 2px; }
+.headline .figure-value { color: var(--alarm); }
+
+section { margin-bottom: 46px; }
+h2 { font-size: 22px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+h3 { font-size: 17px; font-weight: 600; margin: 26px 0 6px; }
+p { margin: 0 0 14px; max-width: 74ch; }
+figure { margin: 20px 0; }
 figure svg { display: block; width: 100%; height: auto; }
-.verdict { padding: 14px 18px; border-left: 4px solid var(--muted); background: rgba(28,39,51,0.03); max-width: none; }
-.verdict.breached { border-left-color: var(--broken); }
-.verdict.clear { border-left-color: var(--resistant); }
 
-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; }
-th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
-th { font-size: 12px; color: var(--muted); font-weight: 600; border-bottom: 2px solid var(--ink); }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-tbody tr:hover { background: rgba(168,121,28,0.06); }
-.note { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+th, td { overflow-wrap: anywhere; word-break: break-word; }
+th { text-align: left; font-size: 12px; font-weight: 600; color: var(--slate); padding: 0 14px 10px 0; border-bottom: 1px solid var(--paper-line); }
+td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--paper-line); vertical-align: top; }
+td.right, th.right { text-align: right; }
+tbody tr:hover { background: var(--paper-raised); }
 
-.chip { display: inline-block; padding: 2px 9px; border-radius: 2px; font-size: 12px; color: #fff; background: var(--chip); white-space: nowrap; }
-.score { display: inline-block; width: 62px; padding: 2px 8px; text-align: right; font-variant-numeric: tabular-nums; background-color: rgba(168,52,31,0.06); }
-.status { display: inline-block; padding: 2px 9px; border-radius: 2px; font-size: 12px; white-space: nowrap; }
-.status-pass { background: rgba(47,107,94,0.16); color: var(--resistant); }
-.status-fail { background: rgba(168,52,31,0.14); color: var(--broken); }
-.status-partial { background: rgba(192,138,26,0.18); color: #8a610f; }
-.status-manual { background: rgba(109,123,136,0.14); color: var(--muted); }
+.note { display: block; color: var(--slate); font-size: 13.5px; margin-top: 3px; max-width: 46ch; }
+.mono, code { font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace; font-size: 13px; }
+/* A file path reads left to right even inside a right to left document. */
+code, .mono { direction: ltr; unicode-bidi: isolate; display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
+code { color: var(--slate); }
 
-.actions { padding-left: 22px; max-width: 72ch; }
-.actions li { margin-bottom: 10px; }
-.wave { margin-top: 32px; padding-top: 4px; }
-.wave h3 { display: flex; align-items: baseline; gap: 12px; }
-.wave-mark { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid var(--brass); color: var(--brass); font-size: 15px; flex-shrink: 0; }
-.wave-window { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
-.wave-goal { margin: 0 0 8px; }
-.empty { color: var(--muted); font-style: italic; }
-.agility-score { font-size: 18px; }
-footer { border-top: 1px solid var(--rule); padding-top: 18px; color: var(--muted); font-size: 13px; }
+.chip { display: inline-block; padding: 3px 9px; font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; }
+.score { display: inline-block; width: 66px; padding: 3px 8px; text-align: right; background-color: rgba(255,90,60,0.08); }
 
-@media (max-width: 640px) {
-  main { padding: 32px 16px 56px; }
-  table { font-size: 13px; }
-  th, td { padding: 7px 8px; }
+.wave { margin-bottom: 30px; }
+.wave-window { font-size: 13px; font-weight: 400; color: var(--slate); margin-left: 10px; }
+.empty { color: var(--slate); }
+
+ul { margin: 0 0 14px; padding-left: 20px; }
+li { margin-bottom: 5px; }
+
+@media (max-width: 620px) {
+  .vault { padding: 0 18px 32px; }
+  main { padding: 0 18px 60px; }
+  .meta > div { margin-left: 0; margin-right: 24px; }
 }
+
 @media print {
-  body { background: #fff; }
+  body { background: #fff; font-size: 11pt; }
+  .vault { background: #fff; color: var(--ink); padding: 0 0 20pt; border-bottom: 2px solid var(--ink); }
+  .vault h1, .horizon-note, .meta dt { color: var(--slate); }
+  .verdict, .meta dd, .wordmark { color: var(--ink); }
+  .huge { font-size: 60pt; color: var(--alarm); }
+  .huge.clear { color: #1a7a5c; }
+  main { padding: 0; }
+  section { break-inside: avoid; margin-bottom: 24pt; }
   tbody tr:hover { background: none; }
+  .chip { border: 1px solid currentColor; }
 }
 
 </style>
 </head>
 <body>
-<main>
-  <header class="masthead">
-    <p class="kicker">Produced by Miftah</p>
-    <h1>Cryptographic inventory and post quantum readiness</h1>
-    <p class="lede">What cryptography do we run, and what breaks first.</p>
+<div class="vault">
+  <header class="bar">
+    <div class="brand">
+      <span class="wordmark">miftah</span>
+      <span class="wordmark-ar" lang="ar" dir="rtl">مفتاح</span>
+    </div>
     <dl class="meta">
       <div><dt>Target</dt><dd><code>/home/claude/miftah/examples/sample-estate</code></dd></div>
       <div><dt>Generated</dt><dd>2026-09-03</dd></div>
     </dl>
   </header>
 
+  <h1>Cryptographic inventory and post quantum readiness</h1>
+
+  <div class="readout-number">
+    <span class="huge ">8.67</span>
+    <span class="huge-unit">years exposed</span>
+  </div>
+
+  <p class="verdict">The secrecy requirement outruns the horizon by 8.67 years, so traffic recorded today is readable before the data stops mattering.</p>
+
+  <figure class="horizon-figure"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 210" width="960" height="210" role="img" aria-label="Quantum horizon 2033">
+<line x1="28" y1="164" x2="932" y2="164" stroke="#1F4256" stroke-width="1"/>
+<line x1="28.0" y1="164" x2="28.0" y2="169" stroke="#1F4256" stroke-width="1"/>
+<text x="28.0" y="186" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#8FA9B6" text-anchor="middle" style="font-variant-numeric:tabular-nums">2026</text>
+<line x1="134.4" y1="164" x2="134.4" y2="169" stroke="#1F4256" stroke-width="1"/>
+<text x="134.4" y="186" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#8FA9B6" text-anchor="middle" style="font-variant-numeric:tabular-nums">2028</text>
+<line x1="240.7" y1="164" x2="240.7" y2="169" stroke="#1F4256" stroke-width="1"/>
+<text x="240.7" y="186" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#8FA9B6" text-anchor="middle" style="font-variant-numeric:tabular-nums">2030</text>
+<line x1="347.1" y1="164" x2="347.1" y2="169" stroke="#1F4256" stroke-width="1"/>
+<text x="347.1" y="186" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#8FA9B6" text-anchor="middle" style="font-variant-numeric:tabular-nums">2032</text>
+<line x1="453.4" y1="164" x2="453.4" y2="169" stroke="#1F4256" stroke-width="1"/>
+<text x="453.4" y="186" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#8FA9B6" text-anchor="middle" style="font-variant-numeric:tabular-nums">2034</text>
+<line x1="559.8" y1="164" x2="559.8" y2="169" stroke="#1F4256" stroke-width="1"/>
+<text x="559.8" y="186" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#8FA9B6" text-anchor="middle" style="font-variant-numeric:tabular-nums">2036</text>
+<line x1="666.1" y1="164" x2="666.1" y2="169" stroke="#1F4256" stroke-width="1"/>
+<text x="666.1" y="186" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#8FA9B6" text-anchor="middle" style="font-variant-numeric:tabular-nums">2038</text>
+<line x1="772.5" y1="164" x2="772.5" y2="169" stroke="#1F4256" stroke-width="1"/>
+<text x="772.5" y="186" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#8FA9B6" text-anchor="middle" style="font-variant-numeric:tabular-nums">2040</text>
+<line x1="878.8" y1="164" x2="878.8" y2="169" stroke="#1F4256" stroke-width="1"/>
+<text x="878.8" y="186" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#8FA9B6" text-anchor="middle" style="font-variant-numeric:tabular-nums">2042</text>
+<rect x="28.0" y="74" width="265.9" height="56" fill="#4E7A92"/>
+<text x="160.9" y="107" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="500" fill="#E8EFF2" text-anchor="middle" style="font-variant-numeric:tabular-nums">Migration time 5</text>
+<rect x="293.9" y="74" width="70.7" height="56" fill="#2C5A70"/>
+<rect x="364.6" y="74" width="461.0" height="56" fill="#FFB020"/>
+<text x="595.1" y="107" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#0B1A24" text-anchor="middle" style="font-variant-numeric:tabular-nums">Exposed window 8.67 years</text>
+<text x="559.8" y="154" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#8FA9B6" text-anchor="middle" style="font-variant-numeric:tabular-nums">Data shelf life 10</text>
+<line x1="364.6" y1="44" x2="364.6" y2="164" stroke="#FFB020" stroke-width="2"/>
+<circle cx="364.6" cy="44" r="4" fill="#FFB020"/>
+<text x="374.6" y="48" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="600" fill="#FFB020" text-anchor="start" style="font-variant-numeric:tabular-nums">Quantum horizon 2033</text>
+<text x="28.0" y="60" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" fill="#8FA9B6" text-anchor="start" style="font-variant-numeric:tabular-nums">Today</text>
+</svg></figure>
+  <p class="horizon-note">Data that must stay secret for x years, in an estate that takes y years to migrate, is already exposed when x plus y exceeds z, the years remaining before a cryptographically relevant quantum computer exists.</p>
+</div>
+
+<main>
   <section class="figures">
     <div class="figure headline">
       <span class="figure-value">22</span>
@@ -112,120 +219,82 @@ footer { border-top: 1px solid var(--rule); padding-top: 18px; color: var(--mute
     <div class="figure"><span class="figure-value">38</span><span class="figure-label">Agility score</span></div>
   </section>
 
-  <section id="horizon">
+  <section id="composition">
     <h2>The horizon</h2>
-    <p>Data that must stay secret for x years, in an estate that takes y years to migrate, is already exposed when x plus y exceeds z, the years remaining before a cryptographically relevant quantum computer exists.</p>
-    <figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260" role="img" aria-label="Mosca inequality">
-<rect width="900" height="260" fill="#faf8f3"/>
-<line x1="92" y1="188" x2="860" y2="188" stroke="#d9d3c6" stroke-width="1"/>
-<line x1="92.0" y1="188" x2="92.0" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="92.0" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2026</text>
-<line x1="178.3" y1="188" x2="178.3" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="178.3" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2028</text>
-<line x1="264.6" y1="188" x2="264.6" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="264.6" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2030</text>
-<line x1="350.9" y1="188" x2="350.9" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="350.9" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2032</text>
-<line x1="437.2" y1="188" x2="437.2" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="437.2" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2034</text>
-<line x1="523.5" y1="188" x2="523.5" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="523.5" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2036</text>
-<line x1="609.8" y1="188" x2="609.8" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="609.8" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2038</text>
-<line x1="696.0" y1="188" x2="696.0" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="696.0" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2040</text>
-<line x1="782.3" y1="188" x2="782.3" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="782.3" y="210" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2042</text>
-<rect x="365.1" y="82" width="374.1" height="82" fill="#a8341f" fill-opacity="0.10"/>
-<rect x="92.0" y="104" width="215.7" height="38" fill="#a8791c" fill-opacity="0.85"/>
-<rect x="307.7" y="104" width="431.5" height="38" fill="#1c2733" fill-opacity="0.82"/>
-<line x1="365.1" y1="62" x2="365.1" y2="188" stroke="#7a2f1c" stroke-width="2" stroke-dasharray="6 4"/>
-<circle cx="365.1" cy="62.0" r="4" fill="#7a2f1c"/>
-<text x="373.1" y="54" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="14" font-weight="bold" fill="#7a2f1c" text-anchor="start">Mosca inequality 2033</text>
-<text x="199.9" y="128" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="13" fill="#ffffff" text-anchor="middle">Migration time 5</text>
-<text x="523.5" y="128" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="13" fill="#ffffff" text-anchor="middle">Data shelf life 10</text>
-<text x="552.2" y="168" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="13" font-weight="bold" fill="#a8341f" text-anchor="middle">Exposed window 8.67 years</text>
-<text x="92" y="90" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="start">Today</text>
-</svg></figure>
-    <p class="verdict breached">The secrecy requirement outruns the horizon by 8.67 years, so traffic recorded today is readable before the data stops mattering.</p>
-    <figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 96" width="900" height="96" role="img">
-<rect width="900" height="96" fill="#faf8f3"/>
-<rect x="20.0" y="20" width="556.5" height="30" fill="#a8341f"/>
-<text x="298.2" y="40" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#ffffff" text-anchor="middle">broken by Shor 11</text>
-<rect x="576.5" y="20" width="151.8" height="30" fill="#c08a1a"/>
-<text x="652.4" y="40" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#ffffff" text-anchor="middle">weakened by Grover 3</text>
-<rect x="728.2" y="20" width="151.8" height="30" fill="#2f6b5e"/>
-<text x="804.1" y="40" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#ffffff" text-anchor="middle">resistant 3</text>
-<rect x="20" y="66" width="10" height="10" fill="#a8341f"/>
-<text x="36" y="75" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88">broken by Shor 11</text>
-<rect x="164" y="66" width="10" height="10" fill="#c08a1a"/>
-<text x="180" y="75" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88">weakened by Grover 3</text>
-<rect x="336" y="66" width="10" height="10" fill="#2f6b5e"/>
-<text x="352" y="75" font-family="'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" font-size="12" fill="#6d7b88">resistant 3</text>
+    <figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 76" width="860" height="76" role="img" aria-label="estate composition">
+<rect x="0.0" y="0" width="556.5" height="34" fill="#FF5A3C"/>
+<text x="278.2" y="22" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle" style="font-variant-numeric:tabular-nums">11</text>
+<rect x="556.5" y="0" width="151.8" height="34" fill="#FFB020"/>
+<text x="632.4" y="22" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" fill="#0B1A24" text-anchor="middle" style="font-variant-numeric:tabular-nums">3</text>
+<rect x="708.2" y="0" width="151.8" height="34" fill="#2FBF8F"/>
+<text x="784.1" y="22" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" fill="#0B1A24" text-anchor="middle" style="font-variant-numeric:tabular-nums">3</text>
+<text x="0.0" y="60" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5A727F">broken by Shor</text>
+<text x="556.5" y="60" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5A727F">weakened by Grover</text>
+<text x="708.2" y="60" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5A727F">resistant</text>
 </svg></figure>
   </section>
 
   <section id="inventory">
     <h2>Inventory</h2>
-    <table><thead><tr><th>Asset</th><th>Primitive</th><th>Classical</th><th>Quantum</th><th class="num">Risk</th><th class="num">Uses</th><th>Target</th></tr></thead><tbody><tr><td><strong>RC4</strong><span class="note">Biased keystream. Prohibited in TLS by RFC 7465.</span></td><td>stream-cipher</td><td>broken</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 74%, transparent 74%)">74</span></td><td class="num">1</td><td>ChaCha20-Poly1305 or AES-256-GCM</td></tr>
-<tr><td><strong>Embedded secret key material</strong></td><td>unknown</td><td>broken</td><td><span class="chip" style="--chip:#2f6b5e">unknown</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 48%, transparent 48%)">48</span></td><td class="num">1</td><td></td></tr>
-<tr><td><strong>RSA</strong><span class="note">Factoring. A cryptographically relevant quantum computer recovers the private key.</span></td><td>pke</td><td>acceptable</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 49%, transparent 49%)">49</span></td><td class="num">4</td><td>ML-KEM-768 for key establishment, ML-DSA-65 for signatures</td></tr>
-<tr><td><strong>ECDH</strong><span class="note">Elliptic curve discrete log. Breaks faster than RSA on the same machine.</span></td><td>key-agree</td><td>strong</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 42%, transparent 42%)">42</span></td><td class="num">4</td><td>X25519MLKEM768 hybrid key exchange</td></tr>
-<tr><td><strong>SHA-1</strong><span class="note">SHAttered and Shambles produced practical collisions. NIST is retiring it entirely by 2030.</span></td><td>hash</td><td>broken</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 77%, transparent 77%)">77</span></td><td class="num">4</td><td>SHA-256 or SHA-384</td></tr>
-<tr><td><strong>SSH configuration</strong></td><td>unknown</td><td>weak</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 65%, transparent 65%)">65</span></td><td class="num">3</td><td></td></tr>
-<tr><td><strong>MD5</strong><span class="note">Chosen prefix collisions cost seconds. Never acceptable for signatures or certificates.</span></td><td>hash</td><td>broken</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 75%, transparent 75%)">75</span></td><td class="num">2</td><td>SHA-256 for integrity, Argon2id or scrypt for passwords</td></tr>
-<tr><td><strong>3DES</strong><span class="note">Sweet32 birthday attack on the 64 bit block. Disallowed by NIST SP 800 131A after 2023.</span></td><td>block-cipher</td><td>broken</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 75%, transparent 75%)">75</span></td><td class="num">2</td><td>AES-256-GCM</td></tr>
-<tr><td><strong>TLS configuration</strong></td><td>unknown</td><td>broken</td><td><span class="chip" style="--chip:#2f6b5e">unknown</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 48%, transparent 48%)">48</span></td><td class="num">1</td><td></td></tr>
-<tr><td><strong>DH</strong><span class="note">Finite field discrete log.</span></td><td>key-agree</td><td>acceptable</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 46%, transparent 46%)">46</span></td><td class="num">1</td><td>X25519MLKEM768 hybrid key exchange</td></tr>
-<tr><td><strong>RSA 1024</strong><span class="note">Factoring. A cryptographically relevant quantum computer recovers the private key.</span></td><td>pke</td><td>acceptable</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 46%, transparent 46%)">46</span></td><td class="num">1</td><td>ML-KEM-768 for key establishment, ML-DSA-65 for signatures</td></tr>
-<tr><td><strong>ECB mode</strong></td><td>block-cipher</td><td>broken</td><td><span class="chip" style="--chip:#2f6b5e">unknown</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 48%, transparent 48%)">48</span></td><td class="num">1</td><td></td></tr>
-<tr><td><strong>Curve25519 family</strong><span class="note">Edwards curve discrete log.</span></td><td>signature</td><td>strong</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 42%, transparent 42%)">42</span></td><td class="num">4</td><td>ML-DSA-65</td></tr>
-<tr><td><strong>RSA 2048</strong><span class="note">Factoring. A cryptographically relevant quantum computer recovers the private key.</span></td><td>pke</td><td>acceptable</td><td><span class="chip" style="--chip:#a8341f">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 46%, transparent 46%)">46</span></td><td class="num">1</td><td>ML-KEM-768 for key establishment, ML-DSA-65 for signatures</td></tr>
-<tr><td><strong>AES-128</strong><span class="note">Grover leaves about 64 bits of effective strength. Fine today, thin for a long secrecy horizon.</span></td><td>block-cipher</td><td>strong</td><td><span class="chip" style="--chip:#c08a1a">weakened by Grover</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 21%, transparent 21%)">21</span></td><td class="num">3</td><td>AES-256</td></tr>
-<tr><td><strong>SHA-256</strong><span class="note">Sound today. Prefer SHA-384 where the artefact must stay trustworthy past 2035.</span></td><td>hash</td><td>strong</td><td><span class="chip" style="--chip:#c08a1a">weakened by Grover</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 22%, transparent 22%)">22</span></td><td class="num">4</td><td></td></tr>
-<tr><td><strong>AES-256</strong><span class="note">Holds up against Grover. No migration needed.</span></td><td>block-cipher</td><td>strong</td><td><span class="chip" style="--chip:#2f6b5e">resistant</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 5%, transparent 5%)">5</span></td><td class="num">3</td><td></td></tr>
-<tr><td><strong>X25519MLKEM768</strong><span class="note">Hybrid group. Safe against a break in either half, so it is the right thing to deploy first.</span></td><td>combiner</td><td>strong</td><td><span class="chip" style="--chip:#2f6b5e">resistant</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 2%, transparent 2%)">2</span></td><td class="num">1</td><td></td></tr>
-<tr><td><strong>ML-DSA-65</strong><span class="note">FIPS 204. The default choice for certificates and code signing.</span></td><td>signature</td><td>strong</td><td><span class="chip" style="--chip:#2f6b5e">resistant</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 2%, transparent 2%)">2</span></td><td class="num">1</td><td></td></tr>
-<tr><td><strong>PBKDF2</strong><span class="note">Strength rests entirely on the iteration count. Under 600000 with SHA-256 is below OWASP guidance.</span></td><td>kdf</td><td>weak</td><td><span class="chip" style="--chip:#c08a1a">weakened by Grover</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 43%, transparent 43%)">43</span></td><td class="num">1</td><td></td></tr></tbody></table>
+    <table><thead><tr><th>Asset</th><th>Primitive</th><th>Classical</th><th>Quantum</th><th class="num">Risk</th><th class="num">Uses</th><th>Target</th></tr></thead><tbody><tr><td><strong>RC4</strong><span class="note">Biased keystream. Prohibited in TLS by RFC 7465.</span></td><td>stream-cipher</td><td>broken</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 74%, transparent 74%)">74</span></td><td class="num">1</td><td>ChaCha20-Poly1305 or AES-256-GCM</td></tr>
+<tr><td><strong>Embedded secret key material</strong></td><td>unknown</td><td>broken</td><td><span class="chip" style="background:#5A727F;color:#ffffff">unknown</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 48%, transparent 48%)">48</span></td><td class="num">1</td><td></td></tr>
+<tr><td><strong>RSA</strong><span class="note">Factoring. A cryptographically relevant quantum computer recovers the private key.</span></td><td>pke</td><td>acceptable</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 49%, transparent 49%)">49</span></td><td class="num">4</td><td>ML-KEM-768 for key establishment, ML-DSA-65 for signatures</td></tr>
+<tr><td><strong>ECDH</strong><span class="note">Elliptic curve discrete log. Breaks faster than RSA on the same machine.</span></td><td>key-agree</td><td>strong</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 42%, transparent 42%)">42</span></td><td class="num">4</td><td>X25519MLKEM768 hybrid key exchange</td></tr>
+<tr><td><strong>SHA-1</strong><span class="note">SHAttered and Shambles produced practical collisions. NIST is retiring it entirely by 2030.</span></td><td>hash</td><td>broken</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 77%, transparent 77%)">77</span></td><td class="num">4</td><td>SHA-256 or SHA-384</td></tr>
+<tr><td><strong>SSH configuration</strong></td><td>unknown</td><td>weak</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 65%, transparent 65%)">65</span></td><td class="num">3</td><td></td></tr>
+<tr><td><strong>MD5</strong><span class="note">Chosen prefix collisions cost seconds. Never acceptable for signatures or certificates.</span></td><td>hash</td><td>broken</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 75%, transparent 75%)">75</span></td><td class="num">2</td><td>SHA-256 for integrity, Argon2id or scrypt for passwords</td></tr>
+<tr><td><strong>3DES</strong><span class="note">Sweet32 birthday attack on the 64 bit block. Disallowed by NIST SP 800 131A after 2023.</span></td><td>block-cipher</td><td>broken</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 75%, transparent 75%)">75</span></td><td class="num">2</td><td>AES-256-GCM</td></tr>
+<tr><td><strong>TLS configuration</strong></td><td>unknown</td><td>broken</td><td><span class="chip" style="background:#5A727F;color:#ffffff">unknown</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 48%, transparent 48%)">48</span></td><td class="num">1</td><td></td></tr>
+<tr><td><strong>DH</strong><span class="note">Finite field discrete log.</span></td><td>key-agree</td><td>acceptable</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 46%, transparent 46%)">46</span></td><td class="num">1</td><td>X25519MLKEM768 hybrid key exchange</td></tr>
+<tr><td><strong>RSA 1024</strong><span class="note">Factoring. A cryptographically relevant quantum computer recovers the private key.</span></td><td>pke</td><td>acceptable</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 46%, transparent 46%)">46</span></td><td class="num">1</td><td>ML-KEM-768 for key establishment, ML-DSA-65 for signatures</td></tr>
+<tr><td><strong>ECB mode</strong></td><td>block-cipher</td><td>broken</td><td><span class="chip" style="background:#5A727F;color:#ffffff">unknown</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 48%, transparent 48%)">48</span></td><td class="num">1</td><td></td></tr>
+<tr><td><strong>Curve25519 family</strong><span class="note">Edwards curve discrete log.</span></td><td>signature</td><td>strong</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 42%, transparent 42%)">42</span></td><td class="num">4</td><td>ML-DSA-65</td></tr>
+<tr><td><strong>RSA 2048</strong><span class="note">Factoring. A cryptographically relevant quantum computer recovers the private key.</span></td><td>pke</td><td>acceptable</td><td><span class="chip" style="background:#FF5A3C;color:#ffffff">broken by Shor</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 46%, transparent 46%)">46</span></td><td class="num">1</td><td>ML-KEM-768 for key establishment, ML-DSA-65 for signatures</td></tr>
+<tr><td><strong>AES-128</strong><span class="note">Grover leaves about 64 bits of effective strength. Fine today, thin for a long secrecy horizon.</span></td><td>block-cipher</td><td>strong</td><td><span class="chip" style="background:#FFB020;color:#0B1A24">weakened by Grover</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 21%, transparent 21%)">21</span></td><td class="num">3</td><td>AES-256</td></tr>
+<tr><td><strong>SHA-256</strong><span class="note">Sound today. Prefer SHA-384 where the artefact must stay trustworthy past 2035.</span></td><td>hash</td><td>strong</td><td><span class="chip" style="background:#FFB020;color:#0B1A24">weakened by Grover</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 22%, transparent 22%)">22</span></td><td class="num">4</td><td></td></tr>
+<tr><td><strong>AES-256</strong><span class="note">Holds up against Grover. No migration needed.</span></td><td>block-cipher</td><td>strong</td><td><span class="chip" style="background:#2FBF8F;color:#0B1A24">resistant</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 5%, transparent 5%)">5</span></td><td class="num">3</td><td></td></tr>
+<tr><td><strong>X25519MLKEM768</strong><span class="note">Hybrid group. Safe against a break in either half, so it is the right thing to deploy first.</span></td><td>combiner</td><td>strong</td><td><span class="chip" style="background:#2FBF8F;color:#0B1A24">resistant</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 2%, transparent 2%)">2</span></td><td class="num">1</td><td></td></tr>
+<tr><td><strong>ML-DSA-65</strong><span class="note">FIPS 204. The default choice for certificates and code signing.</span></td><td>signature</td><td>strong</td><td><span class="chip" style="background:#2FBF8F;color:#0B1A24">resistant</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 2%, transparent 2%)">2</span></td><td class="num">1</td><td></td></tr>
+<tr><td><strong>PBKDF2</strong><span class="note">Strength rests entirely on the iteration count. Under 600000 with SHA-256 is below OWASP guidance.</span></td><td>kdf</td><td>weak</td><td><span class="chip" style="background:#FFB020;color:#0B1A24">weakened by Grover</span></td><td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) 43%, transparent 43%)">43</span></td><td class="num">1</td><td></td></tr></tbody></table>
   </section>
 
   <section id="findings">
     <h2>Findings</h2>
-    <table><thead><tr><th>Severity</th><th>Finding</th><th>Location</th><th>Advice</th></tr></thead><tbody><tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>Deprecated TLS version permitted</strong></td><td><code>config/app.yaml:4</code></td><td>Require TLS 1.2 as a floor and TLS 1.3 wherever the peer supports it.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>MD5 in use</strong></td><td><code>config/app.yaml:5</code></td><td>Replace with SHA-256. For passwords move to Argon2id.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>Triple DES in use</strong></td><td><code>config/app.yaml:5</code></td><td>Replace with AES-256-GCM. Disallowed by NIST SP 800 131A.</td></tr>
-<tr><td><span class="chip" style="--chip:#a8341f">critical</span></td><td><strong>RC4 in use</strong></td><td><code>config/app.yaml:5</code></td><td>Remove. Prohibited in TLS by RFC 7465.</td></tr>
-<tr><td><span class="chip" style="--chip:#6d7b88">low</span></td><td><strong>AES-128 recorded</strong></td><td><code>config/app.yaml:5</code></td><td>Move to AES-256 for anything with a secrecy horizon past 2035.</td></tr>
-<tr><td><span class="chip" style="--chip:#c08a1a">medium</span></td><td><strong>RSA in use</strong></td><td><code>config/app.yaml:5</code></td><td>Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>ECDH or ECDHE key agreement</strong></td><td><code>config/app.yaml:5</code></td><td>Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.</td></tr>
-<tr><td><span class="chip" style="--chip:#a8341f">critical</span></td><td><strong>Hard coded secret</strong><span class="note">c2Vjcm...aW5n (40 chars)</span></td><td><code>config/app.yaml:16</code></td><td>Move to a KMS or an HSM and rotate the exposed value. A key in source is a key in every clone.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>SHA-1 in use</strong></td><td><code>config/sshd_config:3</code></td><td>Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>Finite field Diffie Hellman</strong></td><td><code>config/sshd_config:3</code></td><td>Move to the X25519MLKEM768 hybrid group.</td></tr>
-<tr><td><span class="chip" style="--chip:#c08a1a">medium</span></td><td><strong>Ed25519 or X25519 in use</strong></td><td><code>config/sshd_config:3</code></td><td>Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>Weak SSH algorithm permitted</strong></td><td><code>config/sshd_config:3</code></td><td>Restrict to rsa-sha2-512, ssh-ed25519 and sntrup761x25519-sha512 in sshd_config.</td></tr>
-<tr><td><span class="chip" style="--chip:#c08a1a">medium</span></td><td><strong>RSA in use</strong></td><td><code>config/sshd_config:4</code></td><td>Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.</td></tr>
-<tr><td><span class="chip" style="--chip:#c08a1a">medium</span></td><td><strong>Ed25519 or X25519 in use</strong></td><td><code>config/sshd_config:4</code></td><td>Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>Weak SSH algorithm permitted</strong></td><td><code>config/sshd_config:4</code></td><td>Restrict to rsa-sha2-512, ssh-ed25519 and sntrup761x25519-sha512 in sshd_config.</td></tr>
-<tr><td><span class="chip" style="--chip:#6d7b88">low</span></td><td><strong>AES-128 recorded</strong></td><td><code>config/sshd_config:5</code></td><td>Move to AES-256 for anything with a secrecy horizon past 2035.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>SHA-1 in use</strong></td><td><code>config/sshd_config:6</code></td><td>Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>Weak SSH algorithm permitted</strong></td><td><code>config/sshd_config:6</code></td><td>Restrict to rsa-sha2-512, ssh-ed25519 and sntrup761x25519-sha512 in sshd_config.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>SHA-1 in use</strong></td><td><code>src/client.py:7</code></td><td>Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.</td></tr>
-<tr><td><span class="chip" style="--chip:#a8341f">critical</span></td><td><strong>Certificate verification disabled</strong></td><td><code>src/client.py:10</code></td><td>Verification off means any interception succeeds. Pin a trust store instead.</td></tr>
-<tr><td><span class="chip" style="--chip:#a8341f">critical</span></td><td><strong>Certificate verification disabled</strong></td><td><code>src/client.py:14</code></td><td>Verification off means any interception succeeds. Pin a trust store instead.</td></tr>
-<tr><td><span class="chip" style="--chip:#c08a1a">medium</span></td><td><strong>RSA in use</strong><span class="note">modulus 2048 bits</span></td><td><code>src/keys.js:5</code></td><td>Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>RSA in use</strong><span class="note">modulus 1024 bits</span></td><td><code>src/keys.js:9</code></td><td>Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>ECDH or ECDHE key agreement</strong></td><td><code>src/keys.js:13</code></td><td>Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>ECDH or ECDHE key agreement</strong></td><td><code>src/keys.js:14</code></td><td>Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>ECDH or ECDHE key agreement</strong></td><td><code>src/keys.js:15</code></td><td>Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.</td></tr>
-<tr><td><span class="chip" style="--chip:#c08a1a">medium</span></td><td><strong>RSA in use</strong></td><td><code>src/keys.js:19</code></td><td>Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>RSA PKCS number 1 v1.5 encryption padding</strong></td><td><code>src/keys.js:19</code></td><td>Use OAEP for encryption and PSS for signatures. Bleichenbacher oracles keep resurfacing.</td></tr>
-<tr><td><span class="chip" style="--chip:#c08a1a">medium</span></td><td><strong>Ed25519 or X25519 in use</strong></td><td><code>src/keys.js:23</code></td><td>Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>MD5 in use</strong></td><td><code>src/legacy.js:5</code></td><td>Replace with SHA-256. For passwords move to Argon2id.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>SHA-1 in use</strong></td><td><code>src/legacy.js:9</code></td><td>Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>Triple DES in use</strong></td><td><code>src/legacy.js:13</code></td><td>Replace with AES-256-GCM. Disallowed by NIST SP 800 131A.</td></tr>
-<tr><td><span class="chip" style="--chip:#b8541f">high</span></td><td><strong>ECB mode</strong></td><td><code>src/legacy.js:18</code></td><td>Move to GCM. ECB leaks plaintext structure whatever the cipher.</td></tr>
-<tr><td><span class="chip" style="--chip:#6d7b88">low</span></td><td><strong>AES-128 recorded</strong></td><td><code>src/legacy.js:18</code></td><td>Move to AES-256 for anything with a secrecy horizon past 2035.</td></tr>
-<tr><td><span class="chip" style="--chip:#c08a1a">medium</span></td><td><strong>Ed25519 or X25519 in use</strong></td><td><code>src/modern.js:4</code></td><td>Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.</td></tr></tbody></table>
+    <table><thead><tr><th>Severity</th><th>Finding</th><th>Location</th><th>Advice</th></tr></thead><tbody><tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>Deprecated TLS version permitted</strong></td><td><code>config/app.yaml:4</code></td><td>Require TLS 1.2 as a floor and TLS 1.3 wherever the peer supports it.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>MD5 in use</strong></td><td><code>config/app.yaml:5</code></td><td>Replace with SHA-256. For passwords move to Argon2id.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>Triple DES in use</strong></td><td><code>config/app.yaml:5</code></td><td>Replace with AES-256-GCM. Disallowed by NIST SP 800 131A.</td></tr>
+<tr><td><span class="chip" style="background:#FF5A3C;color:#ffffff">critical</span></td><td><strong>RC4 in use</strong></td><td><code>config/app.yaml:5</code></td><td>Remove. Prohibited in TLS by RFC 7465.</td></tr>
+<tr><td><span class="chip" style="background:#4E7A92;color:#ffffff">low</span></td><td><strong>AES-128 recorded</strong></td><td><code>config/app.yaml:5</code></td><td>Move to AES-256 for anything with a secrecy horizon past 2035.</td></tr>
+<tr><td><span class="chip" style="background:#FFB020;color:#0B1A24">medium</span></td><td><strong>RSA in use</strong></td><td><code>config/app.yaml:5</code></td><td>Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>ECDH or ECDHE key agreement</strong></td><td><code>config/app.yaml:5</code></td><td>Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.</td></tr>
+<tr><td><span class="chip" style="background:#FF5A3C;color:#ffffff">critical</span></td><td><strong>Hard coded secret</strong><span class="note">c2Vjcm...aW5n (40 chars)</span></td><td><code>config/app.yaml:16</code></td><td>Move to a KMS or an HSM and rotate the exposed value. A key in source is a key in every clone.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>SHA-1 in use</strong></td><td><code>config/sshd_config:3</code></td><td>Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>Finite field Diffie Hellman</strong></td><td><code>config/sshd_config:3</code></td><td>Move to the X25519MLKEM768 hybrid group.</td></tr>
+<tr><td><span class="chip" style="background:#FFB020;color:#0B1A24">medium</span></td><td><strong>Ed25519 or X25519 in use</strong></td><td><code>config/sshd_config:3</code></td><td>Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>Weak SSH algorithm permitted</strong></td><td><code>config/sshd_config:3</code></td><td>Restrict to rsa-sha2-512, ssh-ed25519 and sntrup761x25519-sha512 in sshd_config.</td></tr>
+<tr><td><span class="chip" style="background:#FFB020;color:#0B1A24">medium</span></td><td><strong>RSA in use</strong></td><td><code>config/sshd_config:4</code></td><td>Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.</td></tr>
+<tr><td><span class="chip" style="background:#FFB020;color:#0B1A24">medium</span></td><td><strong>Ed25519 or X25519 in use</strong></td><td><code>config/sshd_config:4</code></td><td>Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>Weak SSH algorithm permitted</strong></td><td><code>config/sshd_config:4</code></td><td>Restrict to rsa-sha2-512, ssh-ed25519 and sntrup761x25519-sha512 in sshd_config.</td></tr>
+<tr><td><span class="chip" style="background:#4E7A92;color:#ffffff">low</span></td><td><strong>AES-128 recorded</strong></td><td><code>config/sshd_config:5</code></td><td>Move to AES-256 for anything with a secrecy horizon past 2035.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>SHA-1 in use</strong></td><td><code>config/sshd_config:6</code></td><td>Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>Weak SSH algorithm permitted</strong></td><td><code>config/sshd_config:6</code></td><td>Restrict to rsa-sha2-512, ssh-ed25519 and sntrup761x25519-sha512 in sshd_config.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>SHA-1 in use</strong></td><td><code>src/client.py:7</code></td><td>Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.</td></tr>
+<tr><td><span class="chip" style="background:#FF5A3C;color:#ffffff">critical</span></td><td><strong>Certificate verification disabled</strong></td><td><code>src/client.py:10</code></td><td>Verification off means any interception succeeds. Pin a trust store instead.</td></tr>
+<tr><td><span class="chip" style="background:#FF5A3C;color:#ffffff">critical</span></td><td><strong>Certificate verification disabled</strong></td><td><code>src/client.py:14</code></td><td>Verification off means any interception succeeds. Pin a trust store instead.</td></tr>
+<tr><td><span class="chip" style="background:#FFB020;color:#0B1A24">medium</span></td><td><strong>RSA in use</strong><span class="note">modulus 2048 bits</span></td><td><code>src/keys.js:5</code></td><td>Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>RSA in use</strong><span class="note">modulus 1024 bits</span></td><td><code>src/keys.js:9</code></td><td>Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>ECDH or ECDHE key agreement</strong></td><td><code>src/keys.js:13</code></td><td>Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>ECDH or ECDHE key agreement</strong></td><td><code>src/keys.js:14</code></td><td>Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>ECDH or ECDHE key agreement</strong></td><td><code>src/keys.js:15</code></td><td>Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.</td></tr>
+<tr><td><span class="chip" style="background:#FFB020;color:#0B1A24">medium</span></td><td><strong>RSA in use</strong></td><td><code>src/keys.js:19</code></td><td>Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>RSA PKCS number 1 v1.5 encryption padding</strong></td><td><code>src/keys.js:19</code></td><td>Use OAEP for encryption and PSS for signatures. Bleichenbacher oracles keep resurfacing.</td></tr>
+<tr><td><span class="chip" style="background:#FFB020;color:#0B1A24">medium</span></td><td><strong>Ed25519 or X25519 in use</strong></td><td><code>src/keys.js:23</code></td><td>Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>MD5 in use</strong></td><td><code>src/legacy.js:5</code></td><td>Replace with SHA-256. For passwords move to Argon2id.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>SHA-1 in use</strong></td><td><code>src/legacy.js:9</code></td><td>Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>Triple DES in use</strong></td><td><code>src/legacy.js:13</code></td><td>Replace with AES-256-GCM. Disallowed by NIST SP 800 131A.</td></tr>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">high</span></td><td><strong>ECB mode</strong></td><td><code>src/legacy.js:18</code></td><td>Move to GCM. ECB leaks plaintext structure whatever the cipher.</td></tr>
+<tr><td><span class="chip" style="background:#4E7A92;color:#ffffff">low</span></td><td><strong>AES-128 recorded</strong></td><td><code>src/legacy.js:18</code></td><td>Move to AES-256 for anything with a secrecy horizon past 2035.</td></tr>
+<tr><td><span class="chip" style="background:#FFB020;color:#0B1A24">medium</span></td><td><strong>Ed25519 or X25519 in use</strong></td><td><code>src/modern.js:4</code></td><td>Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.</td></tr></tbody></table>
   </section>
 
   

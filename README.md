@@ -24,9 +24,9 @@ You do not get to start migrating when the machine is announced. You had to have
 
 Miftah makes that inequality the centre of the report:
 
-![Horizon strip](docs/media/horizon-breached.png)
+![Horizon strip](docs/media/horizon.png)
 
-Ten years of required secrecy plus five years of migration against a 2033 horizon leaves you exposed for **8.67 years**. Move any of the three numbers and the picture moves with it. The console lets you drag them.
+Ten years of required secrecy plus five years of migration against a 2033 horizon leaves you exposed for **8.67 years**. The amber span is not a risk in the abstract, it is the stretch of calendar during which traffic captured today can be read. Move any of the three numbers and the picture moves with it. The console lets you drag them.
 
 ---
 
@@ -101,6 +101,8 @@ curl -sO https://raw.githubusercontent.com/CycloneDX/specification/master/schema
 
 ![Console](docs/media/console.png)
 
+The number is the interface. It is the first thing on the page and it moves the moment you touch a slider.
+
 ---
 
 ## The roadmap
@@ -143,7 +145,7 @@ cd miftah
 node --test "test/*.test.js"
 ```
 
-78 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
+84 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
 
 ---
 

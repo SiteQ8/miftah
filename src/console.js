@@ -8,6 +8,7 @@
 
 import { PALETTE } from './timeline.js';
 import { VERSION } from './version.js';
+import { THEME, SANS, MONO, severityColour, quantumColour } from './theme.js';
 
 function escapeHtml(text) {
   return String(text ?? '')
@@ -30,82 +31,76 @@ export function buildConsole(scan = null, options = {}) {
 <style>${consoleStyles()}</style>
 </head>
 <body>
-<header class="bar">
-  <div class="brand">
-    <span class="mark" aria-hidden="true">&#1605;</span>
-    <div>
-      <h1>Miftah console</h1>
-      <p>Cryptographic inventory and post quantum readiness</p>
-    </div>
-  </div>
-  <div class="bar-actions">
-    <button type="button" id="load">Load a scan</button>
-    <button type="button" id="sample">Use the sample</button>
-    <button type="button" id="download" disabled>Save report</button>
-    <input type="file" id="file" accept="application/json,.json" hidden>
-  </div>
-</header>
 
-<main id="app">
+<div class="vault">
+  <header class="bar">
+    <div class="brand">
+      <span class="wordmark">miftah</span>
+      <span class="wordmark-ar" lang="ar" dir="rtl">مفتاح</span>
+    </div>
+    <div class="bar-actions">
+      <button type="button" id="load">Load a scan</button>
+      <button type="button" id="sample">Use the sample</button>
+      <button type="button" id="download" disabled>Save report</button>
+      <input type="file" id="file" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
   <section id="empty" class="dropzone">
     <h2>Drop a scan result here</h2>
-    <p>Run <code>miftah scan . --json scan.json</code> and drop the file on this page. Nothing is uploaded, the scoring runs in this tab.</p>
-    <p class="hint">Or paste the JSON below.</p>
-    <textarea id="paste" rows="4" placeholder='{"target":"...","findings":[],"assets":[]}'></textarea>
-    <button type="button" id="parse">Read the pasted scan</button>
+    <p>Run <code>miftah scan . --json scan.json</code> and drop the file on this page. Nothing is uploaded and nothing leaves this tab.</p>
+    <textarea id="paste" rows="3" placeholder='{"target":"...","findings":[],"assets":[]}' aria-label="Paste a scan result"></textarea>
+    <div class="dropzone-actions">
+      <button type="button" id="parse">Read the pasted scan</button>
+      <button type="button" id="sample2">Use the sample instead</button>
+    </div>
     <p id="error" class="error" hidden></p>
   </section>
 
+  <div id="readout" hidden>
+    <div class="readout-number">
+      <span class="huge" id="deficit">0</span>
+      <span class="huge-unit" id="deficitUnit">years exposed</span>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <figure id="horizonFigure"></figure>
+
+    <div class="controls">
+      <label class="control">
+        <span class="control-name">Data must stay secret <b id="shelfOut">10</b> years</span>
+        <input type="range" id="shelf" min="1" max="30" value="10">
+      </label>
+      <label class="control">
+        <span class="control-name">Migration takes <b id="migrationOut">5</b> years</span>
+        <input type="range" id="migration" min="1" max="15" value="5">
+      </label>
+      <label class="control">
+        <span class="control-name">Quantum horizon <b id="horizonOut">2033</b></span>
+        <input type="range" id="horizon" min="2028" max="2045" value="2033">
+      </label>
+      <label class="control control-select">
+        <span class="control-name">Exposure</span>
+        <select id="exposure">
+          <option value="internet" selected>Reachable from the internet</option>
+          <option value="partner">Partner network</option>
+          <option value="internal">Internal only</option>
+          <option value="airgapped">Air gapped</option>
+        </select>
+      </label>
+    </div>
+  </div>
+</div>
+
+<main id="app">
   <div id="report" hidden>
-    <section class="assumptions">
-      <h2>Planning assumptions</h2>
-      <p class="assumptions-lede">These three numbers decide everything below. Move them and the whole estate is rescored.</p>
-      <div class="controls">
-        <label>
-          <span>Data shelf life <b id="shelfOut">10</b> years</span>
-          <input type="range" id="shelf" min="1" max="30" value="10">
-          <small>How long the data must stay secret.</small>
-        </label>
-        <label>
-          <span>Migration time <b id="migrationOut">5</b> years</span>
-          <input type="range" id="migration" min="1" max="15" value="5">
-          <small>How long a full migration realistically takes.</small>
-        </label>
-        <label>
-          <span>Quantum horizon <b id="horizonOut">2033</b></span>
-          <input type="range" id="horizon" min="2028" max="2045" value="2033">
-          <small>The year a relevant quantum computer is assumed to exist.</small>
-        </label>
-        <label>
-          <span>Exposure</span>
-          <select id="exposure">
-            <option value="internet" selected>Reachable from the internet</option>
-            <option value="partner">Partner network</option>
-            <option value="internal">Internal only</option>
-            <option value="airgapped">Air gapped</option>
-          </select>
-          <small>Whether traffic can be recorded today.</small>
-        </label>
-      </div>
-    </section>
-
     <section class="figures" id="figures"></section>
-
-    <section class="horizon-block">
-      <h2>The horizon</h2>
-      <figure id="horizonFigure"></figure>
-      <p class="verdict" id="verdict"></p>
-    </section>
 
     <nav class="tabs" role="tablist">
       <button type="button" class="tab active" data-panel="inventory" role="tab">Inventory</button>
       <button type="button" class="tab" data-panel="debt" role="tab">Technical debt</button>
       <button type="button" class="tab" data-panel="roadmap" role="tab">Roadmap</button>
+      <input type="search" id="search" placeholder="Filter by algorithm, file or rule" aria-label="Filter">
     </nav>
-
-    <div class="filter">
-      <input type="search" id="search" placeholder="Filter by algorithm, file or rule">
-    </div>
 
     <section id="inventory" class="panel" role="tabpanel"></section>
     <section id="debt" class="panel" role="tabpanel" hidden></section>
@@ -131,15 +126,36 @@ ${consoleScript()}
 function consoleScript() {
   return String.raw`
 var PALETTE = ${JSON.stringify(PALETTE)};
+var C = ${JSON.stringify({
+    vault: THEME.vault,
+    onVault: THEME.onVault,
+    axis: THEME.vaultLine,
+    axisText: THEME.onVaultDim,
+    migration: THEME.steel,
+    secrecy: '#2C5A70',
+    exposed: THEME.signal,
+    live: THEME.live,
+    alarm: THEME.alarm,
+    slate: THEME.slate
+  })};
 
 var QUANTUM_EXPOSURE = { broken: 1, weakened: 0.45, unknown: 0.3, resistant: 0 };
 var CLASSICAL_PENALTY = { broken: 1, weak: 0.7, legacy: 0.5, acceptable: 0.2, strong: 0 };
 var EXPOSURE_FACTOR = { internet: 1, partner: 0.85, internal: 0.65, airgapped: 0.35 };
 var SEVERITY_WEIGHT = { critical: 100, high: 70, medium: 40, low: 15, info: 5 };
-var SEVERITY_COLOUR = {
-  critical: PALETTE.broken, high: '#b8541f', medium: PALETTE.weakened,
-  low: '#6d7b88', info: PALETTE.resistant
-};
+var SEVERITY_COLOUR = ${JSON.stringify({
+    critical: severityColour('critical'),
+    high: severityColour('high'),
+    medium: severityColour('medium'),
+    low: severityColour('low'),
+    info: severityColour('info')
+  })};
+var QUANTUM_COLOUR = ${JSON.stringify({
+    broken: quantumColour('broken'),
+    weakened: quantumColour('weakened'),
+    resistant: quantumColour('resistant'),
+    unknown: quantumColour('unknown')
+  })};
 
 var state = { scan: null, profile: { shelfLife: 10, migrationYears: 5, crqcYear: 2033, exposure: 'internet' }, filter: '', panel: 'inventory' };
 
@@ -236,44 +252,72 @@ var WAVES = [
 ];
 
 function horizonSvg(mosca) {
-  var width = 900, height = 250;
+  var width = 960, height = 200;
   var startYear = new Date().getFullYear();
   var migration = Math.max(0, mosca.migrationYears);
   var shelf = Math.max(0, mosca.shelfLife);
   var horizonYears = Math.max(0.1, mosca.yearsToHorizon);
-  var span = Math.max(migration + shelf, horizonYears) * 1.12 + 1;
-  var left = 60, right = width - 40, usable = right - left;
+  var span = Math.max(migration + shelf, horizonYears) * 1.08 + 0.8;
+  var left = 28, right = width - 28, usable = right - left;
   function x(years) { return left + (years / span) * usable; }
-  var barY = 100, barH = 38, axisY = barY + barH + 42;
-  var horizonX = x(horizonYears), migrationEnd = x(migration), shelfEnd = x(migration + shelf);
-  var exposedStart = Math.min(horizonX, shelfEnd);
-  var svg = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + width + ' ' + height + '" width="100%" role="img">'];
-  svg.push('<rect width="' + width + '" height="' + height + '" fill="' + PALETTE.paper + '"/>');
-  svg.push('<line x1="' + left + '" y1="' + axisY + '" x2="' + right + '" y2="' + axisY + '" stroke="' + PALETTE.rule + '"/>');
-  var step = span > 22 ? 5 : span > 11 ? 2 : 1;
-  for (var year = 0; year <= span; year += step) {
+  function between(a, b) { var p = x(a), q = x(b); return { x: Math.min(p, q), w: Math.abs(q - p) }; }
+  var barY = 64, barH = 56, axisY = barY + barH + 34;
+  var secrecyEnd = migration + shelf;
+  var splitAt = Math.min(Math.max(horizonYears, migration), secrecyEnd);
+
+  var svg = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + width + ' ' + height + '" width="100%" role="img" aria-label="Quantum horizon">'];
+  function text(v, tx, ty, size, fill, anchor, weight) {
+    return '<text x="' + Number(tx).toFixed(1) + '" y="' + ty + '" font-size="' + size + '"'
+      + (weight ? ' font-weight="' + weight + '"' : '') + ' fill="' + fill + '" text-anchor="'
+      + (anchor || 'start') + '" style="font-variant-numeric:tabular-nums">' + esc(v) + '</text>';
+  }
+
+  svg.push('<line x1="' + left + '" y1="' + axisY + '" x2="' + right + '" y2="' + axisY + '" stroke="' + C.axis + '"/>');
+  var step = span > 18 ? 4 : span > 9 ? 2 : 1;
+  for (var year = 0; year <= Math.floor(span); year += step) {
     var tick = x(year);
-    svg.push('<line x1="' + tick.toFixed(1) + '" y1="' + axisY + '" x2="' + tick.toFixed(1) + '" y2="' + (axisY + 6) + '" stroke="' + PALETTE.rule + '"/>');
-    svg.push('<text x="' + tick.toFixed(1) + '" y="' + (axisY + 22) + '" font-family="Georgia, serif" font-size="12" fill="' + PALETTE.muted + '" text-anchor="middle">' + (startYear + year) + '</text>');
+    svg.push('<line x1="' + tick.toFixed(1) + '" y1="' + axisY + '" x2="' + tick.toFixed(1) + '" y2="' + (axisY + 5) + '" stroke="' + C.axis + '"/>');
+    svg.push(text(startYear + year, tick, axisY + 22, 12, C.axisText, 'middle'));
   }
-  if (mosca.breached && shelfEnd > exposedStart) {
-    svg.push('<rect x="' + exposedStart.toFixed(1) + '" y="' + (barY - 22) + '" width="' + (shelfEnd - exposedStart).toFixed(1) + '" height="' + (barH + 44) + '" fill="' + PALETTE.broken + '" fill-opacity="0.10"/>');
+
+  var mig = between(0, migration);
+  svg.push('<rect x="' + mig.x.toFixed(1) + '" y="' + barY + '" width="' + mig.w.toFixed(1) + '" height="' + barH + '" fill="' + C.migration + '"/>');
+  if (mig.w > 96) svg.push(text('Migration ' + migration, mig.x + mig.w / 2, barY + barH / 2 + 5, 14, C.onVault, 'middle', 500));
+
+  var safe = between(migration, splitAt);
+  var labelled = false;
+  if (safe.w > 0) {
+    svg.push('<rect x="' + safe.x.toFixed(1) + '" y="' + barY + '" width="' + safe.w.toFixed(1) + '" height="' + barH + '" fill="' + C.secrecy + '"/>');
+    if (safe.w > 150) { svg.push(text('Must stay secret ' + shelf, safe.x + safe.w / 2, barY + barH / 2 + 5, 14, C.onVault, 'middle', 500)); labelled = true; }
   }
-  svg.push('<rect x="' + left + '" y="' + barY + '" width="' + (migrationEnd - left).toFixed(1) + '" height="' + barH + '" fill="' + PALETTE.brass + '" fill-opacity="0.85"/>');
-  svg.push('<rect x="' + migrationEnd.toFixed(1) + '" y="' + barY + '" width="' + (shelfEnd - migrationEnd).toFixed(1) + '" height="' + barH + '" fill="' + PALETTE.ink + '" fill-opacity="0.82"/>');
-  svg.push('<line x1="' + horizonX.toFixed(1) + '" y1="' + (barY - 42) + '" x2="' + horizonX.toFixed(1) + '" y2="' + axisY + '" stroke="' + PALETTE.horizon + '" stroke-width="2" stroke-dasharray="6 4"/>');
-  svg.push('<circle cx="' + horizonX.toFixed(1) + '" cy="' + (barY - 42) + '" r="4" fill="' + PALETTE.horizon + '"/>');
-  var anchor = horizonX > width - 170 ? 'end' : 'start';
-  svg.push('<text x="' + (horizonX + (anchor === 'end' ? -8 : 8)).toFixed(1) + '" y="' + (barY - 50) + '" font-family="Georgia, serif" font-size="14" font-weight="bold" fill="' + PALETTE.horizon + '" text-anchor="' + anchor + '">Quantum horizon ' + (mosca.crqcYear || Math.round(startYear + horizonYears)) + '</text>');
-  if (migrationEnd - left > 90) {
-    svg.push('<text x="' + ((left + migrationEnd) / 2).toFixed(1) + '" y="' + (barY + 24) + '" font-family="Georgia, serif" font-size="13" fill="#ffffff" text-anchor="middle">Migration ' + migration + '</text>');
+
+  if (mosca.deficit > 0 && secrecyEnd > splitAt) {
+    var hot = between(splitAt, secrecyEnd);
+    svg.push('<rect x="' + hot.x.toFixed(1) + '" y="' + barY + '" width="' + hot.w.toFixed(1) + '" height="' + barH + '" fill="' + C.exposed + '"/>');
+    var caption = 'Exposed ' + mosca.deficit + ' years';
+    if (hot.w > 140) {
+      svg.push(text(caption, hot.x + hot.w / 2, barY + barH / 2 + 5, 14, C.vault, 'middle', 600));
+      if (!labelled) {
+        var whole = between(migration, secrecyEnd);
+        svg.push(text('Must stay secret ' + shelf, whole.x + whole.w / 2, barY + barH + 24, 13, C.axisText, 'middle'));
+        labelled = true;
+      }
+    } else {
+      svg.push(text(caption, hot.x + hot.w / 2, barY + barH + 24, 13, C.exposed, 'middle', 600));
+    }
   }
-  if (shelfEnd - migrationEnd > 140) {
-    svg.push('<text x="' + ((migrationEnd + shelfEnd) / 2).toFixed(1) + '" y="' + (barY + 24) + '" font-family="Georgia, serif" font-size="13" fill="#ffffff" text-anchor="middle">Must stay secret ' + shelf + '</text>');
+
+  if (!labelled && shelf > 0) {
+    var span2 = between(migration, secrecyEnd);
+    svg.push(text('Must stay secret ' + shelf, span2.x + span2.w / 2, barY + barH + 24, 13, C.axisText, 'middle'));
   }
-  if (mosca.breached && shelfEnd - exposedStart > 70) {
-    svg.push('<text x="' + ((exposedStart + shelfEnd) / 2).toFixed(1) + '" y="' + (barY + barH + 24) + '" font-family="Georgia, serif" font-size="13" font-weight="bold" fill="' + PALETTE.broken + '" text-anchor="middle">Exposed ' + mosca.deficit + ' years</text>');
-  }
+
+  var hx = x(horizonYears);
+  svg.push('<line x1="' + hx.toFixed(1) + '" y1="' + (barY - 30) + '" x2="' + hx.toFixed(1) + '" y2="' + axisY + '" stroke="' + C.exposed + '" stroke-width="2"/>');
+  svg.push('<circle cx="' + hx.toFixed(1) + '" cy="' + (barY - 30) + '" r="4" fill="' + C.exposed + '"/>');
+  var nearEnd = hx > width - 210;
+  svg.push(text('Quantum horizon ' + (mosca.crqcYear || Math.round(startYear + horizonYears)), hx + (nearEnd ? -10 : 10), barY - 26, 14, C.exposed, nearEnd ? 'end' : 'start', 600));
+  svg.push(text('Today', left, barY - 14, 12, C.axisText, 'start'));
   svg.push('</svg>');
   return svg.join('');
 }
@@ -294,10 +338,7 @@ function renderInventory(estate) {
     return matches(asset.name + ' ' + asset.primitive + ' ' + (asset.replacement || ''));
   }).map(function (asset) {
     var score = scored[asset.id] || { score: 0 };
-    var chipColour = asset.quantum === 'broken' ? PALETTE.broken
-      : asset.quantum === 'weakened' ? PALETTE.weakened
-      : asset.quantum === 'resistant' ? PALETTE.resistant
-      : PALETTE.muted;
+    var chipColour = QUANTUM_COLOUR[asset.quantum] || QUANTUM_COLOUR.unknown;
     return '<tr>'
       + '<td><strong>' + esc(asset.name) + '</strong>' + (asset.note ? '<span class="note">' + esc(asset.note) + '</span>' : '') + '</td>'
       + '<td>' + esc(asset.primitive) + '</td>'
@@ -365,7 +406,20 @@ function render() {
     + figure(severe, 'Critical and high findings')
     + figure(estate.peakRisk, 'Highest asset risk');
 
-  document.getElementById('horizonFigure').innerHTML = horizonSvg(estate.mosca);
+  var mosca = estate.mosca;
+  var deficit = document.getElementById('deficit');
+  var unit = document.getElementById('deficitUnit');
+  if (mosca.deficit > 0) {
+    deficit.textContent = mosca.deficit;
+    deficit.className = 'huge';
+    unit.textContent = mosca.deficit === 1 ? 'year exposed' : 'years exposed';
+  } else {
+    deficit.textContent = Math.abs(mosca.deficit);
+    deficit.className = 'huge clear';
+    unit.textContent = Math.abs(mosca.deficit) === 1 ? 'year of margin' : 'years of margin';
+  }
+
+  document.getElementById('horizonFigure').innerHTML = horizonSvg(mosca);
   var verdict = document.getElementById('verdict');
   verdict.className = 'verdict ' + (estate.mosca.breached ? 'breached' : 'clear');
   verdict.textContent = estate.mosca.breached
@@ -379,6 +433,7 @@ function render() {
 
 function showReport() {
   document.getElementById('empty').hidden = true;
+  document.getElementById('readout').hidden = false;
   document.getElementById('report').hidden = false;
   document.getElementById('download').disabled = false;
 }
@@ -400,6 +455,16 @@ function fail(message) {
   box.hidden = false;
 }
 
+// A native range track gives no read on position, so paint the travelled part.
+function paintRange(input) {
+  var min = Number(input.min), max = Number(input.max);
+  var pct = max === min ? 0 : ((Number(input.value) - min) / (max - min)) * 100;
+  input.style.backgroundImage =
+    'linear-gradient(to right, ' + C.exposed + ' 0%, ' + C.exposed + ' ' + pct + '%, transparent ' + pct + '%)';
+  input.style.backgroundSize = '100% 3px';
+  input.style.backgroundPosition = 'center';
+}
+
 function bind() {
   var shelf = document.getElementById('shelf');
   var migration = document.getElementById('migration');
@@ -411,6 +476,9 @@ function bind() {
     state.profile.migrationYears = Number(migration.value);
     state.profile.crqcYear = Number(horizon.value);
     state.profile.exposure = exposure.value;
+    paintRange(shelf);
+    paintRange(migration);
+    paintRange(horizon);
     document.getElementById('shelfOut').textContent = shelf.value;
     document.getElementById('migrationOut').textContent = migration.value;
     document.getElementById('horizonOut').textContent = horizon.value;
@@ -450,8 +518,11 @@ function bind() {
     try { load(document.getElementById('paste').value); } catch (error) { fail('That is not valid JSON. ' + error.message); }
   });
 
-  document.getElementById('sample').addEventListener('click', function () {
-    load(sampleScan());
+  // Both sample buttons do the same thing, one in the bar and one in the empty
+  // state, because an empty screen should offer the way forward itself.
+  ['sample', 'sample2'].forEach(function (id) {
+    var button = document.getElementById(id);
+    if (button) button.addEventListener('click', function () { load(sampleScan()); });
   });
 
   document.getElementById('download').addEventListener('click', function () {
@@ -515,110 +586,332 @@ window.miftah = {
 function consoleStyles() {
   return `
 :root {
-  --ink: ${PALETTE.ink};
-  --muted: ${PALETTE.muted};
-  --rule: ${PALETTE.rule};
-  --paper: ${PALETTE.paper};
-  --brass: ${PALETTE.brass};
-  --broken: ${PALETTE.broken};
-  --resistant: ${PALETTE.resistant};
+  --vault: ${THEME.vault};
+  --vault-raised: ${THEME.vaultRaised};
+  --vault-line: ${THEME.vaultLine};
+  --paper: ${THEME.paper};
+  --paper-raised: ${THEME.paperRaised};
+  --paper-line: ${THEME.paperLine};
+  --ink: ${THEME.ink};
+  --slate: ${THEME.slate};
+  --slate-dim: ${THEME.slateDim};
+  --on-vault: ${THEME.onVault};
+  --on-vault-dim: ${THEME.onVaultDim};
+  --signal: ${THEME.signal};
+  --live: ${THEME.live};
+  --alarm: ${THEME.alarm};
+  --steel: ${THEME.steel};
+  --sans: ${SANS};
+  --mono: ${MONO};
 }
+
 * { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
 body {
-  margin: 0; background: var(--paper); color: var(--ink);
-  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
-  font-size: 16px; line-height: 1.6;
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
-body.dragging { outline: 3px dashed var(--brass); outline-offset: -12px; }
+
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+/* Content is capped; the bands behind it are not. */
+.bar, #readout, .dropzone, #report { max-width: 1240px; margin-left: auto; margin-right: auto; }
+
+/* ----------------------------------------------------------- the archive */
+
+.vault {
+  background: var(--vault);
+  color: var(--on-vault);
+  padding: 0 32px 40px;
+}
+
 .bar {
-  display: flex; align-items: center; justify-content: space-between; gap: 20px;
-  padding: 16px 28px; border-bottom: 1px solid var(--rule); background: #fff;
-  position: sticky; top: 0; z-index: 5; flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px 0 30px;
 }
-.brand { display: flex; align-items: center; gap: 14px; }
-.brand svg, .brand img { flex: 0 0 auto; margin-right: 14px; }
-.mark {
-  width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--brass); color: var(--brass); font-size: 22px; flex-shrink: 0;
+
+.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand > * + * { margin-left: 12px; }
+@supports (gap: 1px) { .brand > * + * { margin-left: 0; } }
+
+.wordmark {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--on-vault);
 }
-.bar h1 { margin: 0; font-size: 19px; font-weight: 600; }
-.bar p { margin: 0; font-size: 12.5px; color: var(--muted); }
+
+.wordmark-ar { font-size: 19px; color: var(--signal); }
+
 .bar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-button {
-  font: inherit; font-size: 14px; padding: 7px 14px; background: #fff;
-  border: 1px solid var(--rule); color: var(--ink); cursor: pointer; border-radius: 2px;
+.bar-actions > * + * { margin-left: 8px; }
+@supports (gap: 1px) { .bar-actions > * + * { margin-left: 0; } }
+
+.bar-actions button {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--on-vault);
+  background: transparent;
+  border: 1px solid var(--vault-line);
+  padding: 8px 15px;
+  cursor: pointer;
 }
-button:hover:not(:disabled) { border-color: var(--brass); color: var(--brass); }
-button:disabled { opacity: 0.45; cursor: not-allowed; }
-button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
-main { max-width: 1080px; margin: 0 auto; padding: 32px 24px 72px; }
-.dropzone { border: 1px dashed var(--rule); padding: 48px 32px; text-align: center; }
-.dropzone h2 { margin: 0 0 10px; font-size: 24px; font-weight: 600; }
-.dropzone p { margin: 0 auto 12px; max-width: 56ch; color: var(--muted); }
-.dropzone .hint { font-size: 14px; }
-textarea {
-  width: 100%; max-width: 620px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 13px; padding: 10px; border: 1px solid var(--rule); border-radius: 2px; margin-bottom: 12px;
+.bar-actions button:hover:not(:disabled) { border-color: var(--signal); color: var(--signal); }
+.bar-actions button:disabled { opacity: 0.4; cursor: default; }
+
+/* The readout. One number, large enough that nothing else competes with it. */
+
+.readout-number { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.readout-number > * + * { margin-left: 16px; }
+@supports (gap: 1px) { .readout-number > * + * { margin-left: 0; } }
+
+.huge {
+  font-size: 116px;
+  font-size: clamp(64px, 13vw, 136px);
+  font-weight: 300;
+  line-height: 0.88;
+  letter-spacing: -0.035em;
+  color: var(--signal);
 }
-.error { color: var(--broken); }
 
-h2 { font-size: 23px; margin: 0 0 12px; font-weight: 600; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
-section { margin-bottom: 36px; }
-.assumptions-lede { margin: 0 0 18px; color: var(--muted); max-width: 68ch; }
-.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 22px; }
-.controls label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
-.controls label > span { font-weight: 600; }
-.controls b { color: var(--brass); font-variant-numeric: tabular-nums; }
-.controls small { color: var(--muted); font-size: 12px; }
-input[type=range] { width: 100%; accent-color: ${PALETTE.brass}; }
-select { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--rule); background: #fff; border-radius: 2px; }
+.huge.clear { color: var(--live); }
 
-.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
-.figures { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
-@supports (display: grid) { .figures { display: grid; } }
-.figure { background: var(--paper); padding: 18px 16px; display: flex; flex-direction: column; gap: 4px; -webkit-flex: 1 1 150px; flex: 1 1 150px; min-width: 150px; }
-.figure + .figure { border-left: 1px solid var(--rule); }
-.figure-value { font-size: 32px; line-height: 1; font-variant-numeric: tabular-nums; }
-.headline .figure-value { font-size: 50px; color: var(--brass); }
-.figure-label { font-size: 12px; color: var(--muted); }
+.huge-unit { font-size: 17px; color: var(--on-vault-dim); }
 
-figure { margin: 18px 0; border: 1px solid var(--rule); overflow-x: auto; }
-figure svg { display: block; width: 100%; height: auto; }
-.verdict { padding: 13px 17px; border-left: 4px solid var(--muted); background: rgba(28,39,51,0.03); }
-.verdict.breached { border-left-color: var(--broken); }
-.verdict.clear { border-left-color: var(--resistant); }
+.verdict {
+  margin: 18px 0 0;
+  max-width: 62ch;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--on-vault);
+}
 
-.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin-bottom: 16px; flex-wrap: wrap; }
-.tab { border: none; border-bottom: 2px solid transparent; background: none; padding: 10px 18px; border-radius: 0; }
-.tab.active { border-bottom-color: var(--brass); color: var(--brass); }
-.filter { margin-bottom: 14px; }
-.filter input { font: inherit; font-size: 14px; width: 100%; max-width: 380px; padding: 8px 12px; border: 1px solid var(--rule); background: #fff; border-radius: 2px; }
+#horizonFigure { margin: 26px 0 0; }
+#horizonFigure svg { display: block; width: 100%; height: auto; }
 
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
-th { font-size: 12px; color: var(--muted); font-weight: 600; border-bottom: 2px solid var(--ink); }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-tbody tr:hover { background: rgba(168,121,28,0.06); }
-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; background: rgba(28,39,51,0.05); padding: 1px 5px; border-radius: 3px; }
-.note { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
-.chip { display: inline-block; padding: 2px 9px; border-radius: 2px; font-size: 12px; color: #fff; white-space: nowrap; }
-.score { display: inline-block; width: 62px; padding: 2px 8px; text-align: right; font-variant-numeric: tabular-nums; background-color: rgba(168,52,31,0.06); }
-.empty { color: var(--muted); font-style: italic; }
-.wave { margin-top: 26px; }
-.wave h3 { display: flex; align-items: baseline; gap: 12px; font-size: 18px; margin: 0 0 6px; font-weight: 600; }
-.wave-mark { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid var(--brass); color: var(--brass); font-size: 14px; flex-shrink: 0; }
-.wave-window { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
-.wave-goal { margin: 0 0 10px; max-width: 70ch; }
+/* Controls sit under the strip because they drive it directly. */
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 22px 30px;
+  margin-top: 30px;
+  padding-top: 26px;
+  border-top: 1px solid var(--vault-line);
+}
+
+.control { display: block; }
+.control-name { display: block; font-size: 13px; color: var(--on-vault-dim); margin-bottom: 10px; }
+.control-name b { color: var(--signal); font-weight: 600; font-size: 15px; }
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  margin: 8px 0;
+  background: var(--vault-line);
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--signal);
+  border: 0;
+  cursor: pointer;
+}
+
+input[type=range]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--signal);
+  border: 0;
+  cursor: pointer;
+}
+
+input[type=range]::-moz-range-track { height: 3px; background: var(--vault-line); }
+
+select {
+  font-family: inherit;
+  font-size: 14px;
+  width: 100%;
+  color: var(--on-vault);
+  background: var(--vault-raised);
+  border: 1px solid var(--vault-line);
+  padding: 8px 10px;
+}
+
+/* Empty state. An invitation to act rather than a blank panel. */
+
+.dropzone { padding: 8px 0 40px; }
+.dropzone h2, .dropzone p, .dropzone textarea { max-width: 62ch; }
+.dropzone h2 { font-size: 26px; font-weight: 500; margin: 0 0 10px; letter-spacing: -0.01em; }
+.dropzone p { color: var(--on-vault-dim); margin: 0 0 16px; }
+.dropzone code { font-family: var(--mono); font-size: 13px; color: var(--signal); }
+
+.dropzone textarea {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--on-vault);
+  background: var(--vault-raised);
+  border: 1px solid var(--vault-line);
+  padding: 12px;
+  resize: vertical;
+}
+
+.dropzone-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+.dropzone-actions button {
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 9px 16px;
+  border: 1px solid var(--vault-line);
+  background: transparent;
+  color: var(--on-vault);
+}
+
+.dropzone-actions button:first-child { background: var(--signal); border-color: var(--signal); color: var(--vault); font-weight: 500; }
+.dropzone-actions button:hover { border-color: var(--signal); }
+
+.dragging { outline: 2px dashed var(--signal); outline-offset: -8px; }
+
+.error { color: var(--alarm); margin-top: 12px; }
+
+/* ------------------------------------------------------ working surface */
+
+#app { padding: 0 32px 80px; }
+
+.figures {
+  display: -webkit-box;
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--paper-line);
+  margin-bottom: 34px;
+}
+
+@supports (display: grid) {
+  .figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+}
+
+.figure {
+  flex: 1 1 140px;
+  min-width: 140px;
+  padding: 22px 20px 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.figure-value { font-size: 34px; font-weight: 300; line-height: 1.05; letter-spacing: -0.02em; }
+.figure-label { font-size: 13px; color: var(--slate); }
+.headline .figure-value { color: var(--alarm); }
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--paper-line);
+  margin-bottom: 22px;
+}
+
+.tab {
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--slate);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 11px 14px;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--ink); border-bottom-color: var(--signal); font-weight: 500; }
+
+#search {
+  font-family: inherit;
+  font-size: 14px;
+  margin-left: auto;
+  margin-bottom: 6px;
+  padding: 8px 12px;
+  min-width: 240px;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: 1px solid var(--paper-line);
+}
+
+table { width: 100%; border-collapse: collapse; }
+
+th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+  padding: 0 14px 10px 0;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+td { padding: 14px 14px 14px 0; border-bottom: 1px solid var(--paper-line); vertical-align: top; }
+
+tbody tr:hover { background: var(--paper-raised); }
+
+.asset-name { font-weight: 600; }
+.asset-note { display: block; color: var(--slate); font-size: 13.5px; margin-top: 3px; max-width: 46ch; }
+.num { text-align: right; white-space: nowrap; }
+.mono { font-family: var(--mono); font-size: 13px; color: var(--slate); }
+
+.chip {
+  display: inline-block;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.score { display: inline-block; width: 66px; padding: 3px 8px; text-align: right; background-color: rgba(255,90,60,0.08); }
+
+.wave { margin-bottom: 34px; }
+.wave h3 { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: 19px; font-weight: 600; margin: 0 0 4px; }
+.wave-window { font-size: 13px; font-weight: 400; color: var(--slate); }
+.wave-why { color: var(--slate); margin: 0 0 14px; max-width: 68ch; }
+
+.panel h2 { font-size: 21px; font-weight: 600; margin: 0 0 6px; }
+.panel > p { color: var(--slate); max-width: 68ch; margin: 0 0 18px; }
 
 @media (max-width: 620px) {
-  main { padding: 20px 14px 56px; }
-  .bar { padding: 12px 16px; }
-  table { font-size: 13px; }
-  th, td { padding: 7px 8px; }
-}
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-`;
+  .vault { padding: 0 18px 30px; }
+  #app { padding: 0 18px 60px; }
+  .huge { line-height: 0.9; }
+  #search { margin-left: 0; width: 100%; }
+  .figure { padding-right: 12px; }
 }
 
-export default buildConsole;
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+`;
+}
