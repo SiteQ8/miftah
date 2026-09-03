@@ -1,0 +1,6 @@
+# Fixture SSH configuration.
+Protocol 2
+KexAlgorithms diffie-hellman-group14-sha1,curve25519-sha256
+HostKeyAlgorithms ssh-rsa,ssh-ed25519
+Ciphers aes128-cbc,aes256-gcm@openssh.com
+MACs hmac-sha1,hmac-sha2-256

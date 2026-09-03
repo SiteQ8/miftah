@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260" role="img" aria-label="الأفق الكمي">
+<rect width="900" height="260" fill="#faf8f3"/>
+<line x1="92" y1="188" x2="860" y2="188" stroke="#d9d3c6" stroke-width="1"/>
+<line x1="860.0" y1="188" x2="860.0" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="860.0" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2026</text>
+<line x1="773.7" y1="188" x2="773.7" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="773.7" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2028</text>
+<line x1="687.4" y1="188" x2="687.4" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="687.4" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2030</text>
+<line x1="601.1" y1="188" x2="601.1" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="601.1" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2032</text>
+<line x1="514.8" y1="188" x2="514.8" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="514.8" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2034</text>
+<line x1="428.5" y1="188" x2="428.5" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="428.5" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2036</text>
+<line x1="342.2" y1="188" x2="342.2" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="342.2" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2038</text>
+<line x1="256.0" y1="188" x2="256.0" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="256.0" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2040</text>
+<line x1="169.7" y1="188" x2="169.7" y2="194" stroke="#d9d3c6" stroke-width="1"/>
+<text x="169.7" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2042</text>
+<rect x="212.8" y="82" width="374.1" height="82" fill="#a8341f" fill-opacity="0.10"/>
+<rect x="644.3" y="104" width="215.7" height="38" fill="#a8791c" fill-opacity="0.85"/>
+<rect x="212.8" y="104" width="431.5" height="38" fill="#1c2733" fill-opacity="0.82"/>
+<line x1="586.9" y1="62" x2="586.9" y2="188" stroke="#7a2f1c" stroke-width="2" stroke-dasharray="6 4"/>
+<circle cx="586.9" cy="62.0" r="4" fill="#7a2f1c"/>
+<text x="594.9" y="54" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" direction="rtl" unicode-bidi="isolate" font-size="14" font-weight="bold" fill="#7a2f1c" text-anchor="start">الأفق الكمي 2033</text>
+<text x="752.1" y="128" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" direction="rtl" unicode-bidi="isolate" font-size="13" fill="#ffffff" text-anchor="middle">مدة الانتقال 5</text>
+<text x="428.5" y="128" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" direction="rtl" unicode-bidi="isolate" font-size="13" fill="#ffffff" text-anchor="middle">مدة سرية البيانات 10</text>
+<text x="399.8" y="168" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" direction="rtl" unicode-bidi="isolate" font-size="13" font-weight="bold" fill="#a8341f" text-anchor="middle">نافذة الانكشاف 8.67 سنة</text>
+<text x="860" y="90" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#6d7b88" text-anchor="end">اليوم</text>
+</svg>
