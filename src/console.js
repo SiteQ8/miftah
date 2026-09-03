@@ -326,6 +326,13 @@ function figure(value, label, headline) {
   return '<div class="figure' + (headline ? ' headline' : '') + '"><span class="figure-value">' + esc(value) + '</span><span class="figure-label">' + esc(label) + '</span></div>';
 }
 
+function riskColour(score) {
+  if (score >= 75) return C.alarm;
+  if (score >= 55) return '#B3341F';
+  if (score >= 30) return C.exposed;
+  return C.migration;
+}
+
 function matches(text) {
   if (!state.filter) return true;
   return String(text).toLowerCase().indexOf(state.filter) !== -1;
@@ -340,17 +347,22 @@ function renderInventory(estate) {
     var score = scored[asset.id] || { score: 0 };
     var chipColour = QUANTUM_COLOUR[asset.quantum] || QUANTUM_COLOUR.unknown;
     return '<tr>'
-      + '<td><strong>' + esc(asset.name) + '</strong>' + (asset.note ? '<span class="note">' + esc(asset.note) + '</span>' : '') + '</td>'
+      + '<td><span class="asset-name">' + esc(asset.name) + '</span>' + (asset.note ? '<span class="asset-note">' + esc(asset.note) + '</span>' : '') + '</td>'
       + '<td>' + esc(asset.primitive) + '</td>'
       + '<td>' + esc(asset.classical) + '</td>'
-      + '<td><span class="chip" style="background:' + chipColour + '">' + esc(asset.quantum) + '</span></td>'
-      + '<td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) ' + score.score + '%, transparent ' + score.score + '%)">' + score.score + '</span></td>'
+      + '<td><span class="chip" style="--chip-dot:' + chipColour + '">' + esc(asset.quantum) + '</span></td>'
+      + '<td><span class="risk"><span class="risk-track"><span class="risk-fill" style="width:' + score.score + '%;background:' + riskColour(score.score) + '"></span></span><span class="risk-value">' + score.score + '</span></span></td>'
       + '<td class="num">' + (asset.occurrences ? asset.occurrences.length : 0) + '</td>'
       + '<td>' + esc(asset.replacement || '') + '</td>'
       + '</tr>';
   });
   if (!rows.length) return '<p class="empty">Nothing matches that filter.</p>';
-  return '<table><thead><tr><th>Asset</th><th>Primitive</th><th>Classical</th><th>Quantum</th><th class="num">Risk</th><th class="num">Uses</th><th>Target</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+  return '<table>'
+    + '<colgroup><col class="c-asset"><col class="c-primitive"><col class="c-classical">'
+    + '<col class="c-quantum"><col class="c-risk"><col class="c-uses"><col class="c-target"></colgroup>'
+    + '<thead><tr><th>Asset</th><th>Primitive</th><th>Classical</th><th>Quantum</th>'
+    + '<th>Risk</th><th class="num">Uses</th><th>Target</th></tr></thead>'
+    + '<tbody>' + rows.join('') + '</tbody></table>';
 }
 
 function renderDebt() {
@@ -361,7 +373,7 @@ function renderDebt() {
   var rows = findings.slice(0, 400).map(function (finding) {
     var where = finding.line ? finding.file + ':' + finding.line : finding.file;
     return '<tr>'
-      + '<td><span class="chip" style="background:' + (SEVERITY_COLOUR[finding.severity] || PALETTE.muted) + '">' + esc(finding.severity) + '</span></td>'
+      + '<td><span class="chip solid" style="background:' + (SEVERITY_COLOUR[finding.severity] || C.slate) + ';color:#fff">' + esc(finding.severity) + '</span></td>'
       + '<td><strong>' + esc(finding.title) + '</strong>' + (finding.detail ? '<span class="note">' + esc(finding.detail) + '</span>' : '') + '</td>'
       + '<td><code>' + esc(where) + '</code></td>'
       + '<td>' + esc(finding.advice) + '</td>'
@@ -883,16 +895,50 @@ tbody tr:hover { background: var(--paper-raised); }
 .num { text-align: right; white-space: nowrap; }
 .mono { font-family: var(--mono); font-size: 13px; color: var(--slate); }
 
+/* The verdict column repeated a solid block on every row, which reads as
+   decoration rather than information. The colour becomes a dot and the word
+   carries itself. Severity keeps the solid chip, because in the debt table it
+   is the thing being scanned for. */
 .chip {
   display: inline-block;
-  padding: 3px 9px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #fff;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
   white-space: nowrap;
 }
 
-.score { display: inline-block; width: 66px; padding: 3px 8px; text-align: right; background-color: rgba(255,90,60,0.08); }
+.chip::before {
+  content: '';
+  display: inline-block;
+  vertical-align: middle;
+  width: 8px;
+  height: 8px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--chip-dot);
+}
+
+.chip.solid { padding: 3px 9px; color: #fff; font-weight: 600; }
+.chip.solid::before { display: none; }
+
+/* Inline blocks rather than flexbox, because gap degrades to nothing in older
+   engines and the bar disappears entirely. */
+.risk { white-space: nowrap; }
+.risk-track { display: inline-block; vertical-align: middle; width: 56px; height: 6px; background: var(--paper-line); overflow: hidden; }
+.risk-fill { display: block; height: 6px; }
+.risk-value { display: inline-block; vertical-align: middle; margin-left: 8px; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--slate); }
+
+/* Without widths the asset column takes a quarter of the table and the uses
+   column wraps its own header. */
+table { table-layout: fixed; }
+#inventory col.c-asset { width: 30%; }
+#inventory col.c-primitive { width: 11%; }
+#inventory col.c-classical { width: 10%; }
+#inventory col.c-quantum { width: 12%; }
+#inventory col.c-risk { width: 11%; }
+#inventory col.c-uses { width: 6%; }
+#inventory col.c-target { width: 20%; }
 
 .wave { margin-bottom: 34px; }
 .wave h3 { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: 19px; font-weight: 600; margin: 0 0 4px; }
