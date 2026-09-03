@@ -1,0 +1,11 @@
+# Miftah scanning Miftah.
+#
+# These paths are full of algorithm names on purpose. The fixtures exist to be
+# found by the scanner, and the sample output under docs/ is what the scanner
+# produced. Neither describes this project's own cryptography.
+#
+# Patterns are gitignore shaped: * within a path segment, ** across segments,
+# a trailing slash for a directory.
+
+examples/
+docs/sample-*

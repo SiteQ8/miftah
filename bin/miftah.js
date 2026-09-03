@@ -72,6 +72,7 @@ Options
   --sarif <file>       Write SARIF 2.1.0 for code scanning
   --exclude <dir>      Skip a directory, repeatable
   --strict             Do not downgrade findings in tests, fixtures or lists
+  --no-ignore-file     Ignore .miftahignore
   --lockfiles          Scan dependency lockfiles as well
   --quiet              Suppress the console summary
   --version            Print the version
@@ -96,7 +97,7 @@ function parseArgs(argv) {
     }
     const name = arg.slice(2);
     const takesValue = ![
-      'quiet', 'help', 'version', 'no-color', 'validate', 'redact', 'strict', 'lockfiles', 'prune'
+      'quiet', 'help', 'version', 'no-color', 'validate', 'redact', 'strict', 'lockfiles', 'prune', 'no-ignore-file'
     ].includes(name);
     if (!takesValue) {
       options[name] = true;
@@ -205,7 +206,8 @@ async function commandScan(options) {
     exclude: options.exclude,
     redactEvidence: options.redact !== false,
     strict: options.strict === true,
-    lockfiles: options.lockfiles === true
+    lockfiles: options.lockfiles === true,
+    ignoreFile: options['no-ignore-file'] !== true
   });
   scan.version = VERSION;
 
@@ -300,7 +302,8 @@ async function commandBaseline(options) {
     exclude: options.exclude,
     redactEvidence: options.redact !== false,
     strict: options.strict === true,
-    lockfiles: options.lockfiles === true
+    lockfiles: options.lockfiles === true,
+    ignoreFile: options['no-ignore-file'] !== true
   });
   scan.version = VERSION;
 

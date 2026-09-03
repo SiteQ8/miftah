@@ -1,16 +1,16 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:cdf1734c-18b9-450e-91bd-42baa330dc48",
+  "serialNumber": "urn:uuid:e7d2da4f-0dab-4806-b999-d7b2aa24c7cb",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-03T11:29:41.627Z",
+    "timestamp": "2026-09-03T11:59:58.407Z",
     "tools": {
       "components": [
         {
           "type": "application",
           "name": "miftah",
-          "version": "0.5.1",
+          "version": "0.6.0",
           "author": "SiteQ8",
           "description": "Cryptographic inventory and post-quantum readiness"
         }

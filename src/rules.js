@@ -34,7 +34,12 @@ function prefix(source, flags = 'i') {
   return new RegExp(`(?<![A-Za-z0-9])(?:${source})`, flags);
 }
 
-const SECRET_REJECT = /(process\.env|os\.environ|getenv|System\.getenv|ENV\[|\$\{|\{\{|<[a-z_]+>|xxxx|changeme|placeholder|example|your[-_ ]?(?:app[-_ ]?)?(?:key|password|secret|token|api)|<your|replace[-_ ]?me|test[-_]?(?:key|token)|not[-_ ]?a[-_ ]?real|dummy|sample|redacted|FIXME|TODO|https?:\/\/|BEGIN [A-Z ]*PRIVATE KEY)/i;
+// A PEM header whose body is a placeholder is a manifest waiting to be filled
+// in. The marker is always on a line after the header, so this is checked
+// against the block rather than the matched line.
+const PEM_TEMPLATE = /(?:<[A-Za-z_ .-]{2,}>|\{\{|\$\{|YOUR[-_ ]|PASTE[-_ ]?|REPLACE[-_ ]?|INSERT[-_ ]?|xxxx|\.\.\.\.)/i;
+
+const SECRET_REJECT = /(process\.env|os\.environ|getenv|System\.getenv|ENV\[|\$\{|\{\{|<[a-z_]+>|xxxx|changeme|placeholder|example|your[-_ ](?:[a-z]+[-_ ]){0,2}(?:key|password|secret|token|api)|change[-_ ]?me|<[A-Z_]+>|<your|replace[-_ ]?me|test[-_]?(?:key|token)|not[-_ ]?a[-_ ]?real|dummy|sample|redacted|FIXME|TODO|https?:\/\/|BEGIN [A-Z ]*PRIVATE KEY)/i;
 
 const PLACEHOLDER = /(process\.env|os\.environ|getenv|System\.getenv|ENV\[|\$\{|\{\{|<[a-z_]+>|xxxx|changeme|placeholder|example|your[-_]?key|dummy|sample|redacted|FIXME|TODO)/i;
 
@@ -331,6 +336,8 @@ export const RULES = [
   },
   {
     id: 'MFT-K002',
+    rejectInContext: true,
+    reject: PEM_TEMPLATE,
     title: 'Private key material in the tree',
     algorithm: null,
     pattern: /-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----/,
@@ -426,7 +433,7 @@ export const RULES = [
     id: 'MFT-L004',
     title: 'Trust manager accepts every certificate',
     algorithm: null,
-    pattern: /(?:TrustAll|NoopHostnameVerifier|ALLOW_ALL_HOSTNAME_VERIFIER|X509TrustManager\s*\(\s*\)\s*\{[^}]*checkServerTrusted[^}]*\{\s*\}|checkServerTrusted\s*\([^)]*\)\s*(?:throws[^{]*)?\{\s*\})/,
+    pattern: /(?:TrustAll(?:Certs|Certificates|X509|Hosts|SSL|TrustManager)|NoopHostnameVerifier|ALLOW_ALL_HOSTNAME_VERIFIER|X509TrustManager\s*\(\s*\)\s*\{[^}]*checkServerTrusted[^}]*\{\s*\}|checkServerTrusted\s*\([^)]*\)\s*(?:throws[^{]*)?\{\s*\})/i,
     severity: 'critical',
     classical: CLASSICAL.BROKEN,
     quantum: QUANTUM.UNKNOWN,
