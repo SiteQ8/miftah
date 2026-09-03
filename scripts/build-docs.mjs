@@ -193,6 +193,7 @@ const page = `<!doctype html>
         <span class="wordmark-ar" lang="ar" dir="rtl">مفتاح</span>
       </div>
       <nav>
+        <a href="start.html">Get started</a>
         <a href="console.html">Console</a>
         <a href="sample-report-en.html">Sample report</a>
         <a href="https://github.com/SiteQ8/miftah">GitHub</a>
@@ -210,7 +211,8 @@ const page = `<!doctype html>
     <p class="hero-note">Recorded today, decrypted later. The amber span is not a risk in the abstract, it is the stretch of calendar during which traffic captured now can be read.</p>
 
     <div class="cta">
-      <a class="primary" href="console.html">Open the console</a>
+      <a class="primary" href="start.html">Run it on your repository</a>
+      <a href="console.html">Open the console</a>
       <a href="sample-report-en.html">Read a sample report</a>
       <a href="https://github.com/SiteQ8/miftah">Source</a>
     </div>
@@ -312,7 +314,264 @@ const page = `<!doctype html>
 </html>
 `;
 
+
+// ------------------------------------------------------- the adoption page
+// The CI configurations are read from the files people actually copy, so the
+// page and the repository cannot drift apart.
+const ci = (name) => fs.readFileSync(path.join(ROOT, 'examples', 'ci', name), 'utf8').trim();
+const esc = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const START_STYLE = `
+  :root {
+    --vault: ${THEME.vault}; --vault-raised: ${THEME.vaultRaised}; --vault-line: ${THEME.vaultLine};
+    --paper: ${THEME.paper}; --paper-raised: ${THEME.paperRaised}; --paper-line: ${THEME.paperLine};
+    --ink: ${THEME.ink}; --slate: ${THEME.slate};
+    --on-vault: ${THEME.onVault}; --on-vault-dim: ${THEME.onVaultDim};
+    --signal: ${THEME.signal}; --live: ${THEME.live}; --alarm: ${THEME.alarm};
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: ${SANS}; font-size: 16px; line-height: 1.6;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+  code, pre { font-family: ${MONO}; }
+  .inner { max-width: 940px; margin: 0 auto; }
+
+  .vault { background: var(--vault); color: var(--on-vault); padding: 0 32px 52px; }
+  .bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; padding: 22px 0 44px; }
+  .brand { display: flex; align-items: baseline; }
+  .wordmark { font-size: 20px; font-weight: 600; letter-spacing: 0.02em; margin-right: 12px; }
+  .wordmark-ar { font-size: 20px; color: var(--signal); }
+  .bar nav a { color: var(--on-vault-dim); text-decoration: none; font-size: 15px; margin-left: 22px; }
+  .bar nav a:hover, .bar nav a[aria-current] { color: var(--signal); }
+
+  .vault h1 { font-size: 40px; font-weight: 600; letter-spacing: -0.025em; margin: 0 0 14px; }
+  .vault .lede { font-size: 19px; color: var(--on-vault-dim); max-width: 56ch; margin: 0; }
+
+  main { padding: 66px 32px 90px; }
+  .step { display: flex; gap: 22px; margin-bottom: 56px; }
+  .step-n {
+    flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid var(--paper-line); background: var(--paper-raised);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 600; color: var(--slate);
+  }
+  .step-body { flex: 1; min-width: 0; }
+  h2 { font-size: 25px; font-weight: 600; letter-spacing: -0.015em; margin: 4px 0 10px; }
+  h3 { font-size: 17px; font-weight: 600; margin: 30px 0 8px; }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  a { color: ${THEME.alarmDeep}; }
+  .muted { color: var(--slate); }
+
+  .snippet { position: relative; margin: 16px 0 20px; }
+  .snippet pre {
+    margin: 0; padding: 15px 58px 15px 18px; overflow-x: auto;
+    background: var(--vault); color: var(--on-vault); font-size: 14px; line-height: 1.6;
+  }
+  .snippet .copy {
+    position: absolute; top: 9px; right: 9px;
+    font-family: ${SANS}; font-size: 12px; cursor: pointer;
+    color: var(--on-vault-dim); background: transparent;
+    border: 1px solid var(--vault-line); padding: 5px 10px;
+  }
+  .snippet .copy:hover { color: var(--signal); border-color: var(--signal); }
+  .snippet .copy[data-done] { color: var(--live); border-color: var(--live); }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--paper-line); margin: 18px 0 0; }
+  .tabs button {
+    font-family: inherit; font-size: 15px; cursor: pointer;
+    background: none; border: 0; border-bottom: 2px solid transparent;
+    padding: 10px 14px; margin-bottom: -1px; color: var(--slate);
+  }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--signal); font-weight: 500; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; max-width: 640px; }
+  th { text-align: left; font-size: 12px; font-weight: 600; color: var(--slate); padding: 0 16px 9px 0; border-bottom: 1px solid var(--paper-line); }
+  td { padding: 12px 16px 12px 0; border-bottom: 1px solid var(--paper-line); vertical-align: top; }
+  td code { background: var(--paper-raised); border: 1px solid var(--paper-line); padding: 1px 5px; font-size: 13px; }
+  p code, li code { background: var(--paper-raised); border: 1px solid var(--paper-line); padding: 1px 5px; font-size: 0.9em; }
+
+  .note { border-left: 3px solid var(--signal); background: var(--paper-raised); padding: 15px 20px; margin: 20px 0; max-width: 68ch; }
+  .note p:last-child { margin-bottom: 0; }
+  .note strong { display: block; margin-bottom: 4px; }
+
+  footer { background: var(--vault); color: var(--on-vault-dim); padding: 34px 32px; font-size: 14px; }
+  footer a { color: var(--signal); }
+
+  @media (max-width: 620px) {
+    .vault { padding: 0 18px 36px; }
+    main { padding: 44px 18px 64px; }
+    .vault h1 { font-size: 30px; }
+    .step { gap: 14px; }
+    .bar nav a { margin-left: 0; margin-right: 18px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+`;
+
+const snippet = (code) => `<div class="snippet"><button class="copy" type="button">Copy</button><pre>${esc(code)}</pre></div>`;
+
+const startPage = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run Miftah on your repository</title>
+<meta name="description" content="Get a cryptographic inventory and a post quantum readiness gate running in your pipeline, without the build failing from day one.">
+<style>${START_STYLE}</style>
+</head>
+<body>
+
+<div class="vault">
+  <div class="inner">
+    <header class="bar">
+      <div class="brand">
+        <span class="wordmark">miftah</span>
+        <span class="wordmark-ar" lang="ar" dir="rtl">مفتاح</span>
+      </div>
+      <nav>
+        <a href="index.html">Overview</a>
+        <a href="start.html" aria-current="page">Get started</a>
+        <a href="console.html">Console</a>
+        <a href="https://github.com/SiteQ8/miftah">GitHub</a>
+      </nav>
+    </header>
+    <h1>Run it on your repository</h1>
+    <p class="lede">Four steps to a cryptographic inventory and a gate that stays quiet until somebody adds something new.</p>
+  </div>
+</div>
+
+<main class="inner">
+
+<div class="step">
+  <div class="step-n">1</div>
+  <div class="step-body">
+    <h2>Scan</h2>
+    <p>No install, no configuration, no account. Nothing leaves your machine.</p>
+    ${snippet('npx github:SiteQ8/miftah scan .')}
+    <p class="muted">You get the inventory, the exposed window in years, and the highest risk assets in order. Add <code>--html report.html</code> for something to hand to somebody else, or <code>--cbom cbom.json</code> for a CycloneDX 1.6 inventory your SBOM tooling already understands.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-n">2</div>
+  <div class="step-body">
+    <h2>Accept what is already there</h2>
+    <p>This is the step people skip, and skipping it is why scanners get deleted. On any codebase with history the gate fails from the first run and never stops, so somebody removes it within a week.</p>
+    ${snippet('npx github:SiteQ8/miftah baseline .\ngit add .miftah-baseline.json\ngit commit -m "Accept current cryptography"')}
+    <p>Now the build fails only on what arrives after today. Nothing is hidden: every accepted finding still appears in the report and the CBOM, and every run tells you how many the baseline absorbed and how many have been fixed since.</p>
+    <div class="note">
+      <strong>The baseline is meant to be read</strong>
+      <p>Each entry carries the rule, the file and the title beside its hash, so a reviewer can see what is being accepted. A baseline nobody reads is a rubber stamp. Delete an entry to start failing on it again.</p>
+    </div>
+    <p class="muted">Fingerprints ignore line numbers on purpose, so moving code does not invalidate the baseline. They do include the file and the key size, so the same call in a new file counts as new and RSA-1024 becoming RSA-4096 registers as a change. Run <code>miftah baseline . --prune</code> to drop entries whose findings are fixed.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-n">3</div>
+  <div class="step-body">
+    <h2>Put it in the pipeline</h2>
+    <p>Copy one of these. All three gate against the baseline, so they stay quiet until something new appears.</p>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-panel="gha">GitHub Actions</button>
+      <button role="tab" aria-selected="false" data-panel="gl">GitLab CI</button>
+      <button role="tab" aria-selected="false" data-panel="pc">Pre commit</button>
+    </div>
+    <div id="gha">${snippet(ci('github-actions.yml'))}</div>
+    <div id="gl" hidden>${snippet(ci('gitlab-ci.yml'))}</div>
+    <div id="pc" hidden>${snippet(ci('pre-commit.sh'))}</div>
+    <p class="muted">The GitHub workflow also uploads SARIF, so findings appear in code scanning beside everything else your team already reviews. With a baseline in place, only the new ones show up there.</p>
+    <table>
+      <tr><th>Exit code</th><th>Meaning</th></tr>
+      <tr><td><code>0</code></td><td>Nothing at or above the threshold that the baseline has not accepted</td></tr>
+      <tr><td><code>1</code></td><td>Something new at or above <code>--fail-on</code></td></tr>
+      <tr><td><code>2</code></td><td>The scan itself could not run, for example a missing baseline file</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-n">4</div>
+  <div class="step-body">
+    <h2>Set the assumptions to your situation</h2>
+    <p>The defaults assume ten years of required secrecy, a five year migration and a 2033 horizon. The horizon is an assumption rather than a prediction, which is why it is a slider in the console and a flag here.</p>
+    ${snippet('miftah scan . --shelf-life 25 --migration 7 --horizon 2035 --exposure internal')}
+    <table>
+      <tr><th>Flag</th><th>What it means</th></tr>
+      <tr><td><code>--shelf-life</code></td><td>Years the data must stay secret. Medical records and legal archives justify a long one, a session token almost none.</td></tr>
+      <tr><td><code>--migration</code></td><td>Years a full migration realistically takes in your organisation.</td></tr>
+      <tr><td><code>--horizon</code></td><td>Year a capable quantum computer is assumed to exist.</td></tr>
+      <tr><td><code>--exposure</code></td><td><code>internet</code>, <code>partner</code>, <code>internal</code> or <code>airgapped</code>. Lowers the score but never to zero.</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-n">?</div>
+  <div class="step-body">
+    <h2>When it looks wrong</h2>
+
+    <h3>It found more than a thousand findings</h3>
+    <p>Almost certainly a dependency lockfile. A <code>package-lock.json</code> carries a <code>sha512</code> integrity hash per package, which is thousands of entries that say nothing about your cryptography. Lockfiles are skipped by default; <code>--lockfiles</code> scans them anyway.</p>
+
+    <h3>It flagged our own list of weak algorithms</h3>
+    <p>Naming an algorithm is not using one. A denylist, a grading table, a test asserting the weak ones get caught, and a fixture named <code>vulnerable_config.env</code> are all tagged and downgraded rather than reported as vulnerabilities. They are downgraded and never dropped, because a real key committed to a test fixture is still a real key. <code>--strict</code> turns all of it off.</p>
+
+    <h3>It flagged a placeholder</h3>
+    <p>Values like <code>your-app-password</code> and <code>${'${API_KEY}'}</code> are ignored. If a real one slips through, the fastest fix is to accept it in the baseline and open an issue with the line, since a missed placeholder pattern is worth fixing for everybody.</p>
+
+    <h3>It reported nothing at all</h3>
+    <p>Check the file count in the summary. If it read zero files, the tree may be entirely in a language or format outside the allowlist, and that is worth reporting. A scanner that reads nothing is worse than no scanner, because a clean report retires the question.</p>
+
+    <h3>The build fails and we cannot fix it today</h3>
+    <p>Accept it deliberately rather than removing the gate. Run <code>miftah baseline .</code>, commit the file, and the entry is visible to anybody reviewing it later. That is an honest record; a deleted workflow is not.</p>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <div class="inner">Miftah v${VERSION}. MIT licensed. Built by <a href="https://github.com/SiteQ8">Ali</a>.</div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (button) {
+  button.addEventListener('click', function () {
+    var code = button.parentNode.querySelector('pre').textContent;
+    var done = function () {
+      button.textContent = 'Copied';
+      button.setAttribute('data-done', '1');
+      setTimeout(function () { button.textContent = 'Copy'; button.removeAttribute('data-done'); }, 1600);
+    };
+    if (navigator.clipboard) { navigator.clipboard.writeText(code).then(done); return; }
+    var area = document.createElement('textarea');
+    area.value = code;
+    document.body.appendChild(area);
+    area.select();
+    try { document.execCommand('copy'); done(); } finally { document.body.removeChild(area); }
+  });
+});
+
+var tabs = document.querySelectorAll('.tabs button');
+tabs.forEach(function (tab) {
+  tab.addEventListener('click', function () {
+    tabs.forEach(function (other) {
+      other.setAttribute('aria-selected', String(other === tab));
+      document.getElementById(other.getAttribute('data-panel')).hidden = other !== tab;
+    });
+  });
+});
+</script>
+
+</body>
+</html>
+`;
+
+fs.writeFileSync(path.join(DOCS, 'start.html'), startPage);
+
 fs.writeFileSync(path.join(DOCS, 'index.html'), page);
 fs.writeFileSync(path.join(DOCS, '.nojekyll'), '');
 
-console.log(`docs built. index ${page.length} bytes, console ${fs.statSync(path.join(DOCS, 'console.html')).size} bytes`);
+console.log(`docs built. index ${page.length}, start ${startPage.length}, console ${fs.statSync(path.join(DOCS, 'console.html')).size} bytes`);

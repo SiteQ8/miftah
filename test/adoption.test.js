@@ -197,3 +197,26 @@ test('the shipped CI configurations record a baseline before gating', () => {
     assert.match(text, /--baseline/, `${file} gates without a baseline`);
   }
 });
+
+// --------------------------------------------------------- the start page
+
+test('the getting started page is built from the real CI files', () => {
+  // The page and the files people copy must not drift apart.
+  const page = path.join(import.meta.dirname, '..', 'docs', 'start.html');
+  if (!fs.existsSync(page)) return; // docs are generated; nothing to check yet
+  const html = fs.readFileSync(page, 'utf8');
+  const ciDir = path.join(import.meta.dirname, '..', 'examples', 'ci');
+
+  for (const file of ['github-actions.yml', 'gitlab-ci.yml']) {
+    const source = fs.readFileSync(path.join(ciDir, file), 'utf8');
+    const marker = source.split('\n').find((l) => l.includes('--fail-on'));
+    assert.ok(marker && html.includes(marker.trim().replace(/&/g, '&amp;')),
+      `${file} and the page have drifted apart`);
+  }
+
+  assert.match(html, /miftah baseline/, 'the page never tells anyone to record a baseline');
+  assert.ok(!/<script src=/.test(html), 'the page loads external script');
+  for (const url of html.match(/https?:\/\/[^"'\s)]+/g) || []) {
+    assert.ok(url.startsWith('https://github.com/SiteQ8'), `unexpected outbound link: ${url}`);
+  }
+});
