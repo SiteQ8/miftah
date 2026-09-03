@@ -1,10 +1,12 @@
 {
   "target": "/home/claude/miftah/examples/sample-estate",
-  "startedAt": "2026-09-03T11:29:41.596Z",
-  "durationMs": 27,
+  "startedAt": "2026-09-03T11:59:58.381Z",
+  "durationMs": 23,
   "filesFound": 7,
   "filesScanned": 7,
   "filesSkipped": 0,
+  "filesIgnored": 0,
+  "ignoreRules": [],
   "findings": [
     {
       "rule": "MFT-T001",
@@ -723,7 +725,7 @@
     {
       "rule": "MFT-A006",
       "title": "Ed25519 or X25519 in use",
-      "severity": "medium",
+      "severity": "info",
       "algorithm": "ED25519",
       "mode": null,
       "protocol": null,
@@ -734,12 +736,14 @@
       "quantum": "broken",
       "advice": "Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.",
       "file": "src/keys.js",
-      "context": null,
+      "context": "comment",
       "line": 23,
       "column": 46,
       "bits": null,
       "detail": "",
-      "evidence": "return crypto.sign(null, payload, key); // ed25519"
+      "evidence": "return crypto.sign(null, payload, key); // ed25519",
+      "originalSeverity": "medium",
+      "contextNote": "Named in a comment rather than called. Key material would still be reported in full."
     },
     {
       "rule": "MFT-H001",

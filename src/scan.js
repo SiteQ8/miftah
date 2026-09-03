@@ -100,6 +100,55 @@ export function isOwnOutput(file) {
   return OWN_OUTPUT.test(path.basename(file));
 }
 
+// ---------------------------------------------------------------------------
+// Ignore files.
+//
+// Every project that works on cryptography has somewhere full of algorithm
+// names on purpose: fixtures, rule tables, generated sample output. Without a
+// committed way to say so, the only options are a long --exclude nobody
+// remembers or ignoring the tool, and people choose the second.
+// ---------------------------------------------------------------------------
+
+export const IGNORE_FILE = '.miftahignore';
+
+function patternToRegExp(pattern) {
+  const directory = pattern.endsWith('/');
+  const body = directory ? pattern.slice(0, -1) : pattern;
+  const escaped = body
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*\//g, '\u0000')
+    .replace(/\*\*/g, '\u0001')
+    .replace(/\*/g, '[^/]*')
+    .replace(/\?/g, '[^/]')
+    .replace(/\u0000/g, '(?:.*/)?')
+    .replace(/\u0001/g, '.*');
+  const anchored = body.includes('/') ? `^${escaped}` : `(?:^|/)${escaped}`;
+  return new RegExp(directory ? `${anchored}(?:/|$)` : `${anchored}(?:/|$)`);
+}
+
+export function parseIgnore(text) {
+  return String(text)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'))
+    .map((pattern) => ({ pattern, test: patternToRegExp(pattern) }));
+}
+
+export function loadIgnore(root) {
+  const file = path.join(root, IGNORE_FILE);
+  if (!fs.existsSync(file)) return [];
+  try {
+    return parseIgnore(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+export function isIgnored(relative, rules) {
+  const normal = String(relative).replace(/\\/g, '/');
+  return rules.some((rule) => rule.test.test(normal));
+}
+
 export function isLockfile(file) {
   return LOCKFILES.has(path.basename(file));
 }
@@ -131,12 +180,42 @@ function isConfig(file) {
 const CIPHER_STRING = /["'][A-Za-z0-9!+@-]+(?::[A-Za-z0-9!+@-]+){2,}["']/;
 const CATALOGUE_SPAN = 2;
 
+// A source file naming ten or more distinct algorithms is a table of them. An
+// algorithm registry, a cipher grading rubric and a rule set all look like this,
+// and no application reaches for ten primitives in one file. Registry entries
+// sit too far apart for the line window to group them, so the judgement has to
+// be made across the whole file.
+const CATALOGUE_FILE_MIN = 10;
+
 // Text that talks about an algorithm instead of calling it. Remediation advice
 // is the common case: "Remove RC4, 3DES, export and null ciphers".
 const DISCUSSING = /\b(?:remove|removed|disable|disabled|avoid|prefer|deprecat\w*|forbid\w*|reject\w*|block(?:ed|s)?|insecure|unsupported|legacy|obsolete|no longer|should not|must not|do not|don't|weak(?:er|est)?)\b/i;
 
-// A regex naming several key types is a detector, not a use of them.
-const REGEX_LITERAL = /\(\?[:=!<]|\\[dwsbA-Z]|\[\^?[A-Za-z0-9]-[A-Za-z0-9]\]/;
+// A regex naming algorithms is a detector, not a use of them. The second
+// alternative catches a plain literal being tested, /md5|md2|md4/.test(x),
+// which carries none of the usual regex metacharacters.
+const REGEX_LITERAL = /\(\?[:=!<]|\\[dwsbA-Z]|\[\^?[A-Za-z0-9]-[A-Za-z0-9]\]|re\.(?:compile|match|search|fullmatch)\s*\(|new RegExp\s*\(|\/[^/\s][^/\n]*\/[gimsuy]*\s*\.\s*(?:test|exec)\s*\(|\bgrep\s+-[a-zA-Z]*E\b|\begrep\b/;
+
+// Languages where a hash opens a comment. Applying the rule everywhere would
+// read a CSS colour as the start of one.
+const HASH_COMMENT = new Set([
+  '.py', '.sh', '.bash', '.zsh', '.rb', '.yaml', '.yml', '.conf', '.cnf', '.cfg',
+  '.ini', '.toml', '.properties', '.env', '.tf', '.tfvars', '.ps1', '.pl', '.r'
+]);
+
+// An algorithm named in a comment is being discussed, not called. This is the
+// single largest source of noise when scanning a security codebase, where the
+// comments are about cryptography by definition.
+function inComment(line, index, file) {
+  const before = line.slice(0, Math.max(0, index));
+  if (/(?<!:)\/\//.test(before)) return true;
+  if (before.includes('/*') || /^\s*\*/.test(line)) return true;
+  if (before.includes('<!--')) return true;
+  const ext = path.extname(file).toLowerCase();
+  const hashLang = HASH_COMMENT.has(ext) || SCANNABLE_NAMES.has(path.basename(file));
+  if ((hashLang || /^\s*#/.test(line)) && /(?:^|\s)#/.test(before)) return true;
+  return false;
+}
 
 // Prose about the system rather than the system.
 const DOC_EXT = new Set(['.md', '.markdown', '.txt', '.rst', '.adoc']);
@@ -151,15 +230,31 @@ function namesAlgorithmOnly(finding) {
 // table entry looks and never how a call looks.
 const BARE_LITERALS = /^[\s([{]*(?:["'][^"']*["']\s*[,:]?\s*)+[)\]},;]*$/;
 
+// A name bound to a collection of string literals. const VERSIONS = ['TLSv1',
+// 'TLSv1.1'] is a list of things to try, not a protocol being configured.
+const LITERAL_COLLECTION = /[=:]\s*[[({]\s*(?:["'][^"']*["']\s*,?\s*){2,}[\])}]/;
+
+// A command that deliberately offers weak cryptography to find out whether the
+// far end accepts it. The weak names are the probe, not the configuration.
+const PROBE_COMMAND = /\b(?:s_client|s_server|testssl|sslscan|sslyze|nmap|--ciphers?\b|-cipher\b)/;
+
+// A quoted string of three or more words is prose. 'RC4 keystream bias.' is a
+// sentence about RC4. Cipher names and suite strings carry no spaces, so this
+// does not reach them.
+const PROSE_STRING = /["'][^"']*\s[^"']*\s[^"']*["']/;
+
 function markCatalogueLines(findings, lines = []) {
   // Distinct algorithms named per line, so a block can be summed.
   const perLine = new Map();
+  const perFile = new Map();
   for (const finding of findings) {
     const name = finding.algorithm || finding.mode || finding.protocol;
     if (!name) continue;
     const key = `${finding.file}:${finding.line}`;
     if (!perLine.has(key)) perLine.set(key, new Set());
     perLine.get(key).add(name);
+    if (!perFile.has(finding.file)) perFile.set(finding.file, new Set());
+    perFile.get(finding.file).add(name);
   }
 
   for (const finding of findings) {
@@ -171,15 +266,31 @@ function markCatalogueLines(findings, lines = []) {
       }
     }
     const source = lines[finding.line - 1] || '';
-    if (isConfig(finding.file) || CIPHER_STRING.test(source)) continue;
+    if (isConfig(finding.file) && !PROBE_COMMAND.test(source)) continue;
+    if (CIPHER_STRING.test(source) && !PROBE_COMMAND.test(source)) continue;
+
+    if ((perFile.get(finding.file) || new Set()).size >= CATALOGUE_FILE_MIN && namesAlgorithmOnly(finding)) {
+      finding.context = 'catalogue';
+      continue;
+    }
 
     if (DOC_EXT.has(path.extname(finding.file).toLowerCase()) && namesAlgorithmOnly(finding)) {
       finding.context = 'documentation';
       continue;
     }
 
-    if (names.size >= CATALOGUE_MIN || DISCUSSING.test(source) || BARE_LITERALS.test(source)
-        || (REGEX_LITERAL.test(source) && namesAlgorithmOnly(finding))) {
+    // Key material is never downgraded for being in a comment, because a key
+    // pasted above the code that used to use it is still a leaked key.
+    if (namesAlgorithmOnly(finding) && inComment(source, (finding.column || 1) - 1, finding.file)) {
+      finding.context = 'comment';
+      continue;
+    }
+
+    const talkingAbout = namesAlgorithmOnly(finding)
+      && (REGEX_LITERAL.test(source) || LITERAL_COLLECTION.test(source)
+        || PROSE_STRING.test(source) || PROBE_COMMAND.test(source));
+
+    if (names.size >= CATALOGUE_MIN || DISCUSSING.test(source) || BARE_LITERALS.test(source) || talkingAbout) {
       finding.context = 'catalogue';
     }
   }
@@ -192,7 +303,8 @@ const CONTEXT_NOTE = {
   test: 'Found in test code, so it may be an assertion rather than a use.',
   fixture: 'Found in a file that names itself as deliberately insecure.',
   catalogue: 'The line names several algorithms at once, so it reads as a list about cryptography rather than a use of it.',
-  documentation: 'Found in prose rather than in code. Key material would still be reported in full.'
+  documentation: 'Found in prose rather than in code. Key material would still be reported in full.',
+  comment: 'Named in a comment rather than called. Key material would still be reported in full.'
 };
 
 // Severity is reduced rather than removed. A real key committed to a test
@@ -215,9 +327,12 @@ export function scanLine(line, rule, context) {
   if (!match) return null;
   const around = context === undefined ? line : context;
   if (rule.require && !rule.require.test(around)) return null;
-  // Rejection stays on the matched line. A placeholder two lines away does not
-  // make this line safe.
-  if (rule.reject && rule.reject.test(line)) return null;
+  // Rejection stays on the matched line, because a placeholder two lines away
+  // does not make this line safe. The exception is a rule whose evidence spans
+  // lines by nature: a PEM block's body, and so its placeholder, is never on
+  // the header line that matched.
+  const rejectScope = rule.rejectInContext ? around : line;
+  if (rule.reject && rule.reject.test(rejectScope)) return null;
   return match;
 }
 
@@ -327,6 +442,8 @@ export function scanTree(root, options = {}) {
   const findings = [];
   let scanned = 0;
   let skipped = 0;
+  let ignored = 0;
+  const ignoreRules = options.ignoreFile === false ? [] : loadIgnore(root);
 
   for (const file of files) {
     let stat;
@@ -359,6 +476,10 @@ export function scanTree(root, options = {}) {
       skipped += 1;
       continue;
     }
+    if (ignoreRules.length && isIgnored(path.relative(root, file), ignoreRules)) {
+      ignored += 1;
+      continue;
+    }
     scanned += 1;
     const relative = path.relative(root, file) || path.basename(file);
     findings.push(...scanText(text, relative, options));
@@ -371,6 +492,8 @@ export function scanTree(root, options = {}) {
     filesFound: files.length,
     filesScanned: scanned,
     filesSkipped: skipped,
+    filesIgnored: ignored,
+    ignoreRules: ignoreRules.map((r) => r.pattern),
     findings,
     assets: inventory(findings)
   };

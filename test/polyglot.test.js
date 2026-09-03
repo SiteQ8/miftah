@@ -254,3 +254,132 @@ test('lockfiles are not scanned', async () => {
   assert.equal(scan.findings.length, 0, 'lockfile integrity hashes were reported as findings');
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+// ---------------------------------------------------------------------------
+// Sweeping ninety one repositories showed the remaining noise all came from one
+// place: code that talks about cryptography. Comments, algorithm registries,
+// lists of protocol versions and sentences in strings. Miftah scanning its own
+// source produced 1464 findings and 21 criticals before these.
+// ---------------------------------------------------------------------------
+
+test('an algorithm named in a comment is being discussed', () => {
+  const cases = [
+    ["// Catches SHA1Managed without matching src4", 'a.js'],
+    ['  * The MD5 case is handled above.', 'a.js'],
+    ['# we dropped RC4 in 2019', 'deploy.sh'],
+    ['# TODO: replace 3DES here', 'app.py'],
+    ['<!-- the MD5 column is legacy -->', 'page.html']
+  ];
+  for (const [line, file] of cases) {
+    const [finding] = scanText(line, file);
+    assert.ok(finding, `nothing found in: ${line}`);
+    assert.equal(finding.context, 'comment', `not read as a comment: ${line}`);
+  }
+});
+
+test('a hash in a JavaScript line is not a comment', () => {
+  // Applying the hash rule everywhere would read a CSS colour as a comment.
+  const [finding] = scanText("const c = '#aabbcc'; hash = crypto.createHash('md5');", 'a.js');
+  assert.ok(finding);
+  assert.notEqual(finding.context, 'comment');
+});
+
+test('key material in a comment keeps its severity', () => {
+  // A key pasted above the code that used to use it is still a leaked key.
+  const [finding] = scanText('// API_SECRET = "Zx9Kq2Lm4Np7Rt5Vw8Yb1Dc3Fg6Hj0Ks"', 'a.js')
+    .filter((f) => f.rule === 'MFT-K001');
+  assert.ok(finding, 'a secret in a comment was missed');
+  assert.ok(!finding.context);
+  assert.equal(finding.severity, 'critical');
+});
+
+test('a file that is a table of algorithms is read as one', () => {
+  // An algorithm registry spaces its entries too far apart for the line window,
+  // so the judgement has to be made across the whole file.
+  const registry = [
+    "MD5: entry('MD5', { primitive: 'hash' }),",
+    "SHA1: entry('SHA-1', { primitive: 'hash' }),",
+    "DES: entry('DES', { primitive: 'block-cipher' }),",
+    "RC4: entry('RC4', { primitive: 'stream-cipher' }),",
+    "RC2: entry('RC2', { primitive: 'block-cipher' }),",
+    "MD2: entry('MD2', { primitive: 'hash' }),",
+    "MD4: entry('MD4', { primitive: 'hash' }),",
+    "DSA: entry('DSA', { primitive: 'signature' }),",
+    "ECDH: entry('ECDH', { primitive: 'key-agree' }),",
+    "'3DES': entry('3DES', { primitive: 'block-cipher' }),",
+    "Blowfish: entry('Blowfish', { primitive: 'block-cipher' }),"
+  ].map((line, i) => `${line}\n// filler ${i}\n// filler ${i}\n// filler ${i}\n// filler ${i}\n// filler ${i}`).join('\n');
+
+  const findings = scanText(registry, 'src/catalog.js');
+  assert.ok(findings.length >= 10);
+  assert.ok(findings.every((f) => f.context), 'a registry of algorithms was read as usage');
+});
+
+test('an application using several algorithms is not a table', () => {
+  const app = [
+    "const hash = crypto.createHash('md5').update(pw);",
+    "const cipher = crypto.createCipheriv('des-ede3-cbc', key, iv);"
+  ].join('\n');
+  const findings = scanText(app, 'src/auth.js');
+  assert.ok(findings.some((f) => !f.context), 'real usage was downgraded');
+});
+
+test('a list of protocol versions is a list', () => {
+  const findings = scanText("const VERSIONS = ['TLSv1', 'TLSv1.1', 'TLSv1.2', 'TLSv1.3'];", 'src/tls.js');
+  assert.ok(findings.length >= 1);
+  assert.ok(findings.every((f) => f.context === 'catalogue'));
+});
+
+test('a sentence about an algorithm is not a use of it', () => {
+  const [finding] = scanText("notes.push('RC4 keystream bias.');", 'src/tls.js');
+  assert.ok(finding);
+  assert.equal(finding.context, 'catalogue');
+});
+
+test('a cipher suite string has no spaces, so prose detection cannot reach it', () => {
+  const findings = scanText("ciphers = 'ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:RC4-MD5'", 'src/setup.js');
+  assert.ok(findings.some((f) => !f.context), 'a live cipher string was read as prose');
+});
+
+// ------------------------------------------------------------ ignore files
+
+test('an ignore file excludes deliberately bad directories', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'miftah-ign-'));
+  fs.mkdirSync(path.join(dir, 'fixtures'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'fixtures', 'bad.js'), "crypto.createHash('md5')");
+  fs.writeFileSync(path.join(dir, 'src', 'real.js'), "crypto.createHash('md5')");
+
+  const before = scanTree(dir);
+  assert.equal(before.findings.length, 2);
+
+  fs.writeFileSync(path.join(dir, '.miftahignore'), '# deliberate\nfixtures/\n');
+  const after = scanTree(dir);
+  assert.equal(after.findings.length, 1, 'the ignore file was not applied');
+  assert.match(after.findings[0].file, /real\.js$/);
+  assert.equal(after.filesIgnored, 1);
+  assert.deepEqual(after.ignoreRules, ['fixtures/']);
+
+  const off = scanTree(dir, { ignoreFile: false });
+  assert.equal(off.findings.length, 2, 'the ignore file could not be turned off');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('ignore patterns handle globs and nesting', async () => {
+  const { parseIgnore, isIgnored } = await import('../src/scan.js');
+  const rules = parseIgnore('docs/sample-*\n**/testdata/\n*.generated.js\nvendor/');
+  const ignored = ['docs/sample-scan.json', 'a/b/testdata/x.py', 'src/api.generated.js', 'vendor/lib.js'];
+  const kept = ['docs/index.html', 'src/testdata.js', 'src/api.js', 'vendored/lib.js'];
+  for (const file of ignored) assert.ok(isIgnored(file, rules), `should ignore ${file}`);
+  for (const file of kept) assert.ok(!isIgnored(file, rules), `should keep ${file}`);
+});
+
+test('Miftah does not report its own source as an estate', async () => {
+  // It is a security tool whose source names every algorithm it knows.
+  const root = path.join(import.meta.dirname, '..');
+  const scan = scanTree(root);
+  const severe = scan.findings.filter((f) => f.severity === 'critical' || f.severity === 'high');
+  assert.ok(severe.length <= 3, `Miftah reported ${severe.length} severe findings against itself`);
+});

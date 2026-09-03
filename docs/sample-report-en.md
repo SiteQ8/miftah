@@ -3,7 +3,7 @@
 What cryptography do we run, and what breaks first.
 
 Target: `/home/claude/miftah/examples/sample-estate`
-Generated: 2026-09-03T11:29:41.629Z
+Generated: 2026-09-03T11:59:58.409Z
 
 ## Summary
 
@@ -18,7 +18,7 @@ Generated: 2026-09-03T11:29:41.629Z
 | Files read | 7 |
 | Agility score | 25 / 100 |
 
-critical 5, high 21, medium 7, low 3, info 11.
+critical 5, high 21, medium 6, low 3, info 12.
 
 ## The horizon
 
@@ -91,7 +91,6 @@ The secrecy requirement outruns the horizon by 8.67 years, so traffic recorded t
 | high | ECDH or ECDHE key agreement | `src/keys.js:15` | Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target. |
 | medium | RSA in use | `src/keys.js:19` | Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures. |
 | high | RSA PKCS number 1 v1.5 encryption padding | `src/keys.js:19` | Use OAEP for encryption and PSS for signatures. Bleichenbacher oracles keep resurfacing. |
-| medium | Ed25519 or X25519 in use | `src/keys.js:23` | Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside. |
 | high | MD5 in use | `src/legacy.js:5` | Replace with SHA-256. For passwords move to Argon2id. |
 | high | SHA-1 in use | `src/legacy.js:9` | Replace with SHA-256, or SHA-384 where the artefact must outlive 2035. |
 | high | Triple DES in use | `src/legacy.js:13` | Replace with AES-256-GCM. Disallowed by NIST SP 800 131A. |

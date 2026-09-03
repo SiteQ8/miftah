@@ -61,7 +61,17 @@ Findings in tests, in files that name themselves insecure, in prose, and on line
 
 The inverse mistake is the more dangerous one, so it is guarded explicitly: an OpenSSL cipher string in a configuration file names many suites at once and is the most actionable line in the file. Configuration is never treated as a catalogue, and `examples/` keeps full severity because people copy from examples into production more readily than from tests.
 
-`--strict` turns all of it off.
+Comments are read as discussion too, since a security codebase comments about cryptography by definition. So are regexes that detect algorithms, lists of protocol versions, sentences inside strings, and probes that deliberately offer weak ciphers to see whether the far end accepts them. A source file naming ten or more distinct algorithms is a table of them rather than an application, because no application reaches for ten primitives in one file.
+
+For everything else there is `.miftahignore`, which is gitignore shaped:
+
+```
+examples/
+docs/sample-*
+**/testdata/
+```
+
+`--strict` turns all the downgrading off. `--no-ignore-file` ignores the ignore file.
 
 ---
 
@@ -201,7 +211,7 @@ cd miftah
 node --test "test/*.test.js"
 ```
 
-125 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
+142 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
 
 ---
 

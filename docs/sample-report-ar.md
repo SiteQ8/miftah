@@ -3,7 +3,7 @@
 ما التشفير الذي نشغله فعلا وما الذي ينكسر أولا.
 
 الهدف: `/home/claude/miftah/examples/sample-estate`
-تاريخ الإصدار: 2026-09-03T11:29:41.629Z
+تاريخ الإصدار: 2026-09-03T11:59:58.409Z
 
 ## الخلاصة
 
@@ -18,7 +18,7 @@
 | الملفات المقروءة | 7 |
 | درجة المرونة | 25 / 100 |
 
-حرجة 5, عالية 21, متوسطة 7, منخفضة 3, معلومة 11.
+حرجة 5, عالية 21, متوسطة 6, منخفضة 3, معلومة 12.
 
 ## الأفق الزمني
 
@@ -91,7 +91,6 @@
 | عالية | ECDH or ECDHE key agreement | `src/keys.js:15` | Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target. |
 | متوسطة | RSA in use | `src/keys.js:19` | Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures. |
 | عالية | RSA PKCS number 1 v1.5 encryption padding | `src/keys.js:19` | Use OAEP for encryption and PSS for signatures. Bleichenbacher oracles keep resurfacing. |
-| متوسطة | Ed25519 or X25519 in use | `src/keys.js:23` | Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside. |
 | عالية | MD5 in use | `src/legacy.js:5` | Replace with SHA-256. For passwords move to Argon2id. |
 | عالية | SHA-1 in use | `src/legacy.js:9` | Replace with SHA-256, or SHA-384 where the artefact must outlive 2035. |
 | عالية | Triple DES in use | `src/legacy.js:13` | Replace with AES-256-GCM. Disallowed by NIST SP 800 131A. |

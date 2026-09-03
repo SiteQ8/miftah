@@ -220,3 +220,74 @@ test('the getting started page is built from the real CI files', () => {
     assert.ok(url.startsWith('https://github.com/SiteQ8'), `unexpected outbound link: ${url}`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Sweeping ninety one repositories turned these up. Each was a real finding
+// reported against something that was not a problem.
+// ---------------------------------------------------------------------------
+
+test('a PEM template is not a committed key, but a real one is', async () => {
+  const { scanText } = await import('../src/scan.js');
+  const block = (body) => [
+    '    key: |',
+    '      -----BEGIN RSA PRIVATE KEY-----',
+    `      ${body}`,
+    '      -----END RSA PRIVATE KEY-----'
+  ].join('\n');
+
+  for (const placeholder of ['<PRIVATE_KEY>', '{{ tls_key }}', '${TLS_KEY}', 'YOUR_KEY_HERE']) {
+    const hits = scanText(block(placeholder), 'ingress.yaml').filter((f) => f.rule === 'MFT-K002');
+    assert.equal(hits.length, 0, `template body reported as a key: ${placeholder}`);
+  }
+
+  const real = scanText(block('MIIEowIBAAKCAQEAvT7Xk9Qm2Nf8pLzR3JhW1cYbA6dGtEuVoIsKpM0nZxCqHrLy'), 'ingress.yaml');
+  assert.equal(real.filter((f) => f.rule === 'MFT-K002').length, 1, 'a real key stopped being reported');
+});
+
+test('common placeholder secrets are not reported', async () => {
+  const { scanText } = await import('../src/scan.js');
+  for (const line of [
+    'secret_key: "change-me-in-production"',
+    '$env:M365_CLIENT_SECRET = "your-client-secret"',
+    'api_key = "your-api-key-here"'
+  ]) {
+    const hits = scanText(line, 'config.yaml').filter((f) => f.rule === 'MFT-K001');
+    assert.equal(hits.length, 0, `placeholder reported as a secret: ${line}`);
+  }
+});
+
+test('a password containing a common word is still a secret', async () => {
+  // Rejecting on a substring would hide real secrets, which is the worse
+  // failure of the two.
+  const { scanText } = await import('../src/scan.js');
+  const hits = scanText('db_password: "S3cur3P@ssw0rdLong123"', 'config.yaml')
+    .filter((f) => f.rule === 'MFT-K001');
+  assert.equal(hits.length, 1);
+});
+
+test('a probe that offers weak ciphers is not configured with them', async () => {
+  const { scanText } = await import('../src/scan.js');
+  const findings = scanText(
+    `openssl s_client -connect "\${target}:\${port}" -cipher 'NULL:EXPORT:LOW:DES:RC4:MD5'`,
+    'modules/net_tls.sh'
+  );
+  assert.ok(findings.length > 0, 'the algorithms should still be recorded');
+  assert.ok(findings.every((f) => f.context === 'catalogue'), 'a probe was read as configuration');
+});
+
+test('a grep alternation is a detector', async () => {
+  const { scanText } = await import('../src/scan.js');
+  const findings = scanText('if grep -qiE "(RC4|DES|EXPORT|NULL|anon|MD5)" "$conf"; then', 'harden.sh');
+  assert.ok(findings.every((f) => f.context), 'a grep pattern was read as usage');
+});
+
+test('a registry value named TrustAllUsers is not a trust manager', async () => {
+  const { scanText } = await import('../src/scan.js');
+  const hits = scanText('winreg.SetValueEx(key, "TrustAllUsers", 0, winreg.REG_DWORD, 1)', 'harden.py')
+    .filter((f) => f.rule === 'MFT-L004');
+  assert.equal(hits.length, 0);
+
+  const real = scanText('TrustManager[] trustAllCerts = new TrustManager[] {', 'App.java')
+    .filter((f) => f.rule === 'MFT-L004');
+  assert.equal(real.length, 1, 'a real trust all manager stopped being caught');
+});
