@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Miftah console</title>
+<style>
+:root {
+  --ink: #1c2733;
+  --muted: #6d7b88;
+  --rule: #d9d3c6;
+  --paper: #faf8f3;
+  --brass: #a8791c;
+  --broken: #a8341f;
+  --resistant: #2f6b5e;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  font-size: 16px; line-height: 1.6;
+}
+body.dragging { outline: 3px dashed var(--brass); outline-offset: -12px; }
+.bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  padding: 16px 28px; border-bottom: 1px solid var(--rule); background: #fff;
+  position: sticky; top: 0; z-index: 5; flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand svg, .brand img { flex: 0 0 auto; margin-right: 14px; }
+.mark {
+  width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--brass); color: var(--brass); font-size: 22px; flex-shrink: 0;
+}
+.bar h1 { margin: 0; font-size: 19px; font-weight: 600; }
+.bar p { margin: 0; font-size: 12.5px; color: var(--muted); }
+.bar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+button {
+  font: inherit; font-size: 14px; padding: 7px 14px; background: #fff;
+  border: 1px solid var(--rule); color: var(--ink); cursor: pointer; border-radius: 2px;
+}
+button:hover:not(:disabled) { border-color: var(--brass); color: var(--brass); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+main { max-width: 1080px; margin: 0 auto; padding: 32px 24px 72px; }
+.dropzone { border: 1px dashed var(--rule); padding: 48px 32px; text-align: center; }
+.dropzone h2 { margin: 0 0 10px; font-size: 24px; font-weight: 600; }
+.dropzone p { margin: 0 auto 12px; max-width: 56ch; color: var(--muted); }
+.dropzone .hint { font-size: 14px; }
+textarea {
+  width: 100%; max-width: 620px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px; padding: 10px; border: 1px solid var(--rule); border-radius: 2px; margin-bottom: 12px;
+}
+.error { color: var(--broken); }
+
+h2 { font-size: 23px; margin: 0 0 12px; font-weight: 600; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
+section { margin-bottom: 36px; }
+.assumptions-lede { margin: 0 0 18px; color: var(--muted); max-width: 68ch; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 22px; }
+.controls label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.controls label > span { font-weight: 600; }
+.controls b { color: var(--brass); font-variant-numeric: tabular-nums; }
+.controls small { color: var(--muted); font-size: 12px; }
+input[type=range] { width: 100%; accent-color: #a8791c; }
+select { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--rule); background: #fff; border-radius: 2px; }
+
+.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+.figures { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
+@supports (display: grid) { .figures { display: grid; } }
+.figure { background: var(--paper); padding: 18px 16px; display: flex; flex-direction: column; gap: 4px; -webkit-flex: 1 1 150px; flex: 1 1 150px; min-width: 150px; }
+.figure + .figure { border-left: 1px solid var(--rule); }
+.figure-value { font-size: 32px; line-height: 1; font-variant-numeric: tabular-nums; }
+.headline .figure-value { font-size: 50px; color: var(--brass); }
+.figure-label { font-size: 12px; color: var(--muted); }
+
+figure { margin: 18px 0; border: 1px solid var(--rule); overflow-x: auto; }
+figure svg { display: block; width: 100%; height: auto; }
+.verdict { padding: 13px 17px; border-left: 4px solid var(--muted); background: rgba(28,39,51,0.03); }
+.verdict.breached { border-left-color: var(--broken); }
+.verdict.clear { border-left-color: var(--resistant); }
+
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--rule); margin-bottom: 16px; flex-wrap: wrap; }
+.tab { border: none; border-bottom: 2px solid transparent; background: none; padding: 10px 18px; border-radius: 0; }
+.tab.active { border-bottom-color: var(--brass); color: var(--brass); }
+.filter { margin-bottom: 14px; }
+.filter input { font: inherit; font-size: 14px; width: 100%; max-width: 380px; padding: 8px 12px; border: 1px solid var(--rule); background: #fff; border-radius: 2px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; border-bottom: 2px solid var(--ink); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tbody tr:hover { background: rgba(168,121,28,0.06); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; background: rgba(28,39,51,0.05); padding: 1px 5px; border-radius: 3px; }
+.note { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.chip { display: inline-block; padding: 2px 9px; border-radius: 2px; font-size: 12px; color: #fff; white-space: nowrap; }
+.score { display: inline-block; width: 62px; padding: 2px 8px; text-align: right; font-variant-numeric: tabular-nums; background-color: rgba(168,52,31,0.06); background-image: linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) var(--fill, 0%), transparent var(--fill, 0%)); }
+.empty { color: var(--muted); font-style: italic; }
+.wave { margin-top: 26px; }
+.wave h3 { display: flex; align-items: baseline; gap: 12px; font-size: 18px; margin: 0 0 6px; font-weight: 600; }
+.wave-mark { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid var(--brass); color: var(--brass); font-size: 14px; flex-shrink: 0; }
+.wave-window { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+.wave-goal { margin: 0 0 10px; max-width: 70ch; }
+
+@media (max-width: 620px) {
+  main { padding: 20px 14px 56px; }
+  .bar { padding: 12px 16px; }
+  table { font-size: 13px; }
+  th, td { padding: 7px 8px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">&#1605;</span>
+    <div>
+      <h1>Miftah console</h1>
+      <p>Cryptographic inventory and post quantum readiness</p>
+    </div>
+  </div>
+  <div class="bar-actions">
+    <button type="button" id="load">Load a scan</button>
+    <button type="button" id="sample">Use the sample</button>
+    <button type="button" id="download" disabled>Save report</button>
+    <input type="file" id="file" accept="application/json,.json" hidden>
+  </div>
+</header>
+
+<main id="app">
+  <section id="empty" class="dropzone">
+    <h2>Drop a scan result here</h2>
+    <p>Run <code>miftah scan . --json scan.json</code> and drop the file on this page. Nothing is uploaded, the scoring runs in this tab.</p>
+    <p class="hint">Or paste the JSON below.</p>
+    <textarea id="paste" rows="4" placeholder='{"target":"...","findings":[],"assets":[]}'></textarea>
+    <button type="button" id="parse">Read the pasted scan</button>
+    <p id="error" class="error" hidden></p>
+  </section>
+
+  <div id="report" hidden>
+    <section class="assumptions">
+      <h2>Planning assumptions</h2>
+      <p class="assumptions-lede">These three numbers decide everything below. Move them and the whole estate is rescored.</p>
+      <div class="controls">
+        <label>
+          <span>Data shelf life <b id="shelfOut">10</b> years</span>
+          <input type="range" id="shelf" min="1" max="30" value="10">
+          <small>How long the data must stay secret.</small>
+        </label>
+        <label>
+          <span>Migration time <b id="migrationOut">5</b> years</span>
+          <input type="range" id="migration" min="1" max="15" value="5">
+          <small>How long a full migration realistically takes.</small>
+        </label>
+        <label>
+          <span>Quantum horizon <b id="horizonOut">2033</b></span>
+          <input type="range" id="horizon" min="2028" max="2045" value="2033">
+          <small>The year a relevant quantum computer is assumed to exist.</small>
+        </label>
+        <label>
+          <span>Exposure</span>
+          <select id="exposure">
+            <option value="internet" selected>Reachable from the internet</option>
+            <option value="partner">Partner network</option>
+            <option value="internal">Internal only</option>
+            <option value="airgapped">Air gapped</option>
+          </select>
+          <small>Whether traffic can be recorded today.</small>
+        </label>
+      </div>
+    </section>
+
+    <section class="figures" id="figures"></section>
+
+    <section class="horizon-block">
+      <h2>The horizon</h2>
+      <figure id="horizonFigure"></figure>
+      <p class="verdict" id="verdict"></p>
+    </section>
+
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab active" data-panel="inventory" role="tab">Inventory</button>
+      <button type="button" class="tab" data-panel="debt" role="tab">Technical debt</button>
+      <button type="button" class="tab" data-panel="roadmap" role="tab">Roadmap</button>
+    </nav>
+
+    <div class="filter">
+      <input type="search" id="search" placeholder="Filter by algorithm, file or rule">
+    </div>
+
+    <section id="inventory" class="panel" role="tabpanel"></section>
+    <section id="debt" class="panel" role="tabpanel" hidden></section>
+    <section id="roadmap" class="panel" role="tabpanel" hidden></section>
+  </div>
+</main>
+
+<script>
+
+var PALETTE = {"ink":"#1c2733","muted":"#6d7b88","rule":"#d9d3c6","paper":"#faf8f3","brass":"#a8791c","resistant":"#2f6b5e","weakened":"#c08a1a","broken":"#a8341f","horizon":"#7a2f1c","shade":"#efe9dc"};
+
+var QUANTUM_EXPOSURE = { broken: 1, weakened: 0.45, unknown: 0.3, resistant: 0 };
+var CLASSICAL_PENALTY = { broken: 1, weak: 0.7, legacy: 0.5, acceptable: 0.2, strong: 0 };
+var EXPOSURE_FACTOR = { internet: 1, partner: 0.85, internal: 0.65, airgapped: 0.35 };
+var SEVERITY_WEIGHT = { critical: 100, high: 70, medium: 40, low: 15, info: 5 };
+var SEVERITY_COLOUR = {
+  critical: PALETTE.broken, high: '#b8541f', medium: PALETTE.weakened,
+  low: '#6d7b88', info: PALETTE.resistant
+};
+
+var state = { scan: null, profile: { shelfLife: 10, migrationYears: 5, crqcYear: 2033, exposure: 'internet' }, filter: '', panel: 'inventory' };
+
+function esc(text) {
+  return String(text === undefined || text === null ? '' : text)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function moscaDeficit(profile, now) {
+  now = now || new Date();
+  var yearsToHorizon = profile.crqcYear - (now.getFullYear() + now.getMonth() / 12);
+  var deficit = profile.shelfLife + profile.migrationYears - yearsToHorizon;
+  return {
+    shelfLife: profile.shelfLife,
+    migrationYears: profile.migrationYears,
+    crqcYear: profile.crqcYear,
+    yearsToHorizon: Number(yearsToHorizon.toFixed(2)),
+    deficit: Number(deficit.toFixed(2)),
+    breached: deficit > 0
+  };
+}
+
+function band(score) {
+  if (score >= 75) return 'critical';
+  if (score >= 55) return 'high';
+  if (score >= 30) return 'medium';
+  if (score > 0) return 'low';
+  return 'none';
+}
+
+function scoreAsset(asset, profile, mosca) {
+  var exposure = QUANTUM_EXPOSURE[asset.quantum];
+  if (exposure === undefined) exposure = QUANTUM_EXPOSURE.unknown;
+  var penalty = CLASSICAL_PENALTY[asset.classical];
+  if (penalty === undefined) penalty = CLASSICAL_PENALTY.acceptable;
+  var reach = EXPOSURE_FACTOR[profile.exposure] || 1;
+  var urgency = mosca.yearsToHorizon <= 0
+    ? 1
+    : Math.min(1, Math.max(0, mosca.deficit) / Math.max(1, profile.shelfLife + profile.migrationYears));
+  var count = asset.occurrences ? asset.occurrences.length : 1;
+  var spread = Math.min(1, Math.log(count + 1) / Math.LN10 / 2);
+  var raw = 0.5 * (exposure * (0.35 + 0.65 * urgency)) + 0.35 * penalty + 0.15 * spread;
+  var score = Math.round(Math.min(100, raw * 100 * reach));
+  return { id: asset.id, name: asset.name, score: score, band: band(score), occurrences: count };
+}
+
+function scoreEstate(assets, profile) {
+  var mosca = moscaDeficit(profile);
+  var scored = assets.map(function (asset) { return scoreAsset(asset, profile, mosca); });
+  var broken = 0, weakened = 0, resistant = 0;
+  var weightedResistant = 0, weightedTotal = 0;
+  assets.forEach(function (asset) {
+    var count = asset.occurrences ? asset.occurrences.length : 1;
+    var weight = 1 + Math.log(count + 1) / Math.LN10;
+    weightedTotal += weight;
+    if (asset.quantum === 'resistant') { resistant += 1; weightedResistant += weight; }
+    else if (asset.quantum === 'weakened') { weakened += 1; weightedResistant += weight * 0.5; }
+    else if (asset.quantum === 'broken') { broken += 1; }
+  });
+  var peak = scored.reduce(function (max, item) { return Math.max(max, item.score); }, 0);
+  return {
+    mosca: mosca,
+    readiness: weightedTotal ? Math.round((weightedResistant / weightedTotal) * 100) : 100,
+    peakRisk: peak,
+    band: band(peak),
+    counts: {
+      assets: assets.length,
+      quantumBroken: broken,
+      quantumWeakened: weakened,
+      quantumResistant: resistant,
+      needsMigration: broken + weakened
+    },
+    assets: scored.sort(function (a, b) { return b.score - a.score; })
+  };
+}
+
+function assignWave(asset) {
+  if (asset.materialType) return 0;
+  if (asset.classical === 'broken' || asset.classical === 'weak') return 0;
+  if (asset.quantum === 'resistant') return 1;
+  if (asset.primitive === 'key-agree' || asset.primitive === 'kem' || asset.protocol === 'tls' || asset.protocol === 'ssh') return 2;
+  if (asset.primitive === 'block-cipher' || asset.primitive === 'stream-cipher' || asset.primitive === 'kdf' || asset.primitive === 'ae') return 3;
+  if (asset.primitive === 'signature') return 4;
+  if (asset.primitive === 'pke') return 2;
+  return 3;
+}
+
+var WAVES = [
+  { id: 0, name: 'Stop the bleeding', window: 'now', goal: 'Remove cryptography that is already broken against a classical attacker.' },
+  { id: 1, name: 'Know and govern', window: 'months 0 to 6', goal: 'Hold a complete inventory and make the CBOM a build artefact.' },
+  { id: 2, name: 'Protect traffic in flight', window: 'months 3 to 12', goal: 'Deploy hybrid key establishment wherever a session key is negotiated.' },
+  { id: 3, name: 'Protect data at rest', window: 'months 9 to 24', goal: 'Raise symmetric keys to 256 bits and re wrap long lived data.' },
+  { id: 4, name: 'Re root identity and signing', window: 'months 18 to 36', goal: 'Move certificates and code signing to ML-DSA or a hash based signature.' }
+];
+
+function horizonSvg(mosca) {
+  var width = 900, height = 250;
+  var startYear = new Date().getFullYear();
+  var migration = Math.max(0, mosca.migrationYears);
+  var shelf = Math.max(0, mosca.shelfLife);
+  var horizonYears = Math.max(0.1, mosca.yearsToHorizon);
+  var span = Math.max(migration + shelf, horizonYears) * 1.12 + 1;
+  var left = 60, right = width - 40, usable = right - left;
+  function x(years) { return left + (years / span) * usable; }
+  var barY = 100, barH = 38, axisY = barY + barH + 42;
+  var horizonX = x(horizonYears), migrationEnd = x(migration), shelfEnd = x(migration + shelf);
+  var exposedStart = Math.min(horizonX, shelfEnd);
+  var svg = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + width + ' ' + height + '" width="100%" role="img">'];
+  svg.push('<rect width="' + width + '" height="' + height + '" fill="' + PALETTE.paper + '"/>');
+  svg.push('<line x1="' + left + '" y1="' + axisY + '" x2="' + right + '" y2="' + axisY + '" stroke="' + PALETTE.rule + '"/>');
+  var step = span > 22 ? 5 : span > 11 ? 2 : 1;
+  for (var year = 0; year <= span; year += step) {
+    var tick = x(year);
+    svg.push('<line x1="' + tick.toFixed(1) + '" y1="' + axisY + '" x2="' + tick.toFixed(1) + '" y2="' + (axisY + 6) + '" stroke="' + PALETTE.rule + '"/>');
+    svg.push('<text x="' + tick.toFixed(1) + '" y="' + (axisY + 22) + '" font-family="Georgia, serif" font-size="12" fill="' + PALETTE.muted + '" text-anchor="middle">' + (startYear + year) + '</text>');
+  }
+  if (mosca.breached && shelfEnd > exposedStart) {
+    svg.push('<rect x="' + exposedStart.toFixed(1) + '" y="' + (barY - 22) + '" width="' + (shelfEnd - exposedStart).toFixed(1) + '" height="' + (barH + 44) + '" fill="' + PALETTE.broken + '" fill-opacity="0.10"/>');
+  }
+  svg.push('<rect x="' + left + '" y="' + barY + '" width="' + (migrationEnd - left).toFixed(1) + '" height="' + barH + '" fill="' + PALETTE.brass + '" fill-opacity="0.85"/>');
+  svg.push('<rect x="' + migrationEnd.toFixed(1) + '" y="' + barY + '" width="' + (shelfEnd - migrationEnd).toFixed(1) + '" height="' + barH + '" fill="' + PALETTE.ink + '" fill-opacity="0.82"/>');
+  svg.push('<line x1="' + horizonX.toFixed(1) + '" y1="' + (barY - 42) + '" x2="' + horizonX.toFixed(1) + '" y2="' + axisY + '" stroke="' + PALETTE.horizon + '" stroke-width="2" stroke-dasharray="6 4"/>');
+  svg.push('<circle cx="' + horizonX.toFixed(1) + '" cy="' + (barY - 42) + '" r="4" fill="' + PALETTE.horizon + '"/>');
+  var anchor = horizonX > width - 170 ? 'end' : 'start';
+  svg.push('<text x="' + (horizonX + (anchor === 'end' ? -8 : 8)).toFixed(1) + '" y="' + (barY - 50) + '" font-family="Georgia, serif" font-size="14" font-weight="bold" fill="' + PALETTE.horizon + '" text-anchor="' + anchor + '">Quantum horizon ' + (mosca.crqcYear || Math.round(startYear + horizonYears)) + '</text>');
+  if (migrationEnd - left > 90) {
+    svg.push('<text x="' + ((left + migrationEnd) / 2).toFixed(1) + '" y="' + (barY + 24) + '" font-family="Georgia, serif" font-size="13" fill="#ffffff" text-anchor="middle">Migration ' + migration + '</text>');
+  }
+  if (shelfEnd - migrationEnd > 140) {
+    svg.push('<text x="' + ((migrationEnd + shelfEnd) / 2).toFixed(1) + '" y="' + (barY + 24) + '" font-family="Georgia, serif" font-size="13" fill="#ffffff" text-anchor="middle">Must stay secret ' + shelf + '</text>');
+  }
+  if (mosca.breached && shelfEnd - exposedStart > 70) {
+    svg.push('<text x="' + ((exposedStart + shelfEnd) / 2).toFixed(1) + '" y="' + (barY + barH + 24) + '" font-family="Georgia, serif" font-size="13" font-weight="bold" fill="' + PALETTE.broken + '" text-anchor="middle">Exposed ' + mosca.deficit + ' years</text>');
+  }
+  svg.push('</svg>');
+  return svg.join('');
+}
+
+function figure(value, label, headline) {
+  return '<div class="figure' + (headline ? ' headline' : '') + '"><span class="figure-value">' + esc(value) + '</span><span class="figure-label">' + esc(label) + '</span></div>';
+}
+
+function matches(text) {
+  if (!state.filter) return true;
+  return String(text).toLowerCase().indexOf(state.filter) !== -1;
+}
+
+function renderInventory(estate) {
+  var scored = {};
+  estate.assets.forEach(function (item) { scored[item.id] = item; });
+  var rows = (state.scan.assets || []).filter(function (asset) {
+    return matches(asset.name + ' ' + asset.primitive + ' ' + (asset.replacement || ''));
+  }).map(function (asset) {
+    var score = scored[asset.id] || { score: 0 };
+    var chipColour = asset.quantum === 'broken' ? PALETTE.broken
+      : asset.quantum === 'weakened' ? PALETTE.weakened
+      : asset.quantum === 'resistant' ? PALETTE.resistant
+      : PALETTE.muted;
+    return '<tr>'
+      + '<td><strong>' + esc(asset.name) + '</strong>' + (asset.note ? '<span class="note">' + esc(asset.note) + '</span>' : '') + '</td>'
+      + '<td>' + esc(asset.primitive) + '</td>'
+      + '<td>' + esc(asset.classical) + '</td>'
+      + '<td><span class="chip" style="background:' + chipColour + '">' + esc(asset.quantum) + '</span></td>'
+      + '<td class="num"><span class="score" style="--fill:' + score.score + '%">' + score.score + '</span></td>'
+      + '<td class="num">' + (asset.occurrences ? asset.occurrences.length : 0) + '</td>'
+      + '<td>' + esc(asset.replacement || '') + '</td>'
+      + '</tr>';
+  });
+  if (!rows.length) return '<p class="empty">Nothing matches that filter.</p>';
+  return '<table><thead><tr><th>Asset</th><th>Primitive</th><th>Classical</th><th>Quantum</th><th class="num">Risk</th><th class="num">Uses</th><th>Target</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+}
+
+function renderDebt() {
+  var findings = (state.scan.findings || []).filter(function (finding) {
+    return finding.severity !== 'info' && matches(finding.title + ' ' + finding.file + ' ' + finding.rule);
+  }).sort(function (a, b) { return (SEVERITY_WEIGHT[b.severity] || 0) - (SEVERITY_WEIGHT[a.severity] || 0); });
+  if (!findings.length) return '<p class="empty">No findings match that filter.</p>';
+  var rows = findings.slice(0, 400).map(function (finding) {
+    var where = finding.line ? finding.file + ':' + finding.line : finding.file;
+    return '<tr>'
+      + '<td><span class="chip" style="background:' + (SEVERITY_COLOUR[finding.severity] || PALETTE.muted) + '">' + esc(finding.severity) + '</span></td>'
+      + '<td><strong>' + esc(finding.title) + '</strong>' + (finding.detail ? '<span class="note">' + esc(finding.detail) + '</span>' : '') + '</td>'
+      + '<td><code>' + esc(where) + '</code></td>'
+      + '<td>' + esc(finding.advice) + '</td>'
+      + '</tr>';
+  });
+  return '<table><thead><tr><th>Severity</th><th>Finding</th><th>Location</th><th>Advice</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+}
+
+function renderRoadmap(estate) {
+  var scored = {};
+  estate.assets.forEach(function (item) { scored[item.id] = item; });
+  var buckets = WAVES.map(function (wave) { return { wave: wave, items: [] }; });
+  (state.scan.assets || []).forEach(function (asset) {
+    if (!matches(asset.name + ' ' + (asset.replacement || ''))) return;
+    var score = scored[asset.id] || { score: 0 };
+    buckets[assignWave(asset)].items.push({ asset: asset, score: score.score });
+  });
+  return buckets.map(function (bucket) {
+    bucket.items.sort(function (a, b) { return b.score - a.score; });
+    var body = bucket.items.length
+      ? '<table><thead><tr><th>From</th><th>To</th><th class="num">Risk</th><th class="num">Uses</th></tr></thead><tbody>'
+        + bucket.items.map(function (item) {
+            return '<tr><td>' + esc(item.asset.name) + '</td><td>' + esc(item.asset.quantum === 'resistant' ? 'no change needed' : (item.asset.replacement || 'review by hand')) + '</td><td class="num">' + item.score + '</td><td class="num">' + (item.asset.occurrences ? item.asset.occurrences.length : 0) + '</td></tr>';
+          }).join('')
+        + '</tbody></table>'
+      : '<p class="empty">Nothing in this wave.</p>';
+    return '<section class="wave"><h3><span class="wave-mark">' + bucket.wave.id + '</span>' + esc(bucket.wave.name) + '</h3>'
+      + '<p class="wave-window">' + esc(bucket.wave.window) + '</p><p class="wave-goal">' + esc(bucket.wave.goal) + '</p>' + body + '</section>';
+  }).join('');
+}
+
+function render() {
+  if (!state.scan) return;
+  var estate = scoreEstate(state.scan.assets || [], state.profile);
+  state.estate = estate;
+
+  var severe = (state.scan.findings || []).filter(function (f) { return f.severity === 'critical' || f.severity === 'high'; }).length;
+  document.getElementById('figures').innerHTML =
+    figure(estate.readiness, 'Post quantum readiness', true)
+    + figure(estate.counts.needsMigration, 'Assets needing migration')
+    + figure(estate.counts.assets, 'Cryptographic assets')
+    + figure(severe, 'Critical and high findings')
+    + figure(estate.peakRisk, 'Highest asset risk');
+
+  document.getElementById('horizonFigure').innerHTML = horizonSvg(estate.mosca);
+  var verdict = document.getElementById('verdict');
+  verdict.className = 'verdict ' + (estate.mosca.breached ? 'breached' : 'clear');
+  verdict.textContent = estate.mosca.breached
+    ? 'The secrecy requirement outruns the horizon by ' + estate.mosca.deficit + ' years, so traffic recorded today is readable before the data stops mattering.'
+    : 'The secrecy requirement fits inside the horizon with ' + Math.abs(estate.mosca.deficit) + ' years to spare, though the margin shrinks every year the migration is deferred.';
+
+  document.getElementById('inventory').innerHTML = renderInventory(estate);
+  document.getElementById('debt').innerHTML = renderDebt();
+  document.getElementById('roadmap').innerHTML = renderRoadmap(estate);
+}
+
+function showReport() {
+  document.getElementById('empty').hidden = true;
+  document.getElementById('report').hidden = false;
+  document.getElementById('download').disabled = false;
+}
+
+function load(data) {
+  var scan = typeof data === 'string' ? JSON.parse(data) : data;
+  if (!scan || typeof scan !== 'object') throw new Error('That does not look like a scan result.');
+  if (!Array.isArray(scan.assets)) scan.assets = [];
+  if (!Array.isArray(scan.findings)) scan.findings = [];
+  state.scan = scan;
+  showReport();
+  render();
+  return scan;
+}
+
+function fail(message) {
+  var box = document.getElementById('error');
+  box.textContent = message;
+  box.hidden = false;
+}
+
+function bind() {
+  var shelf = document.getElementById('shelf');
+  var migration = document.getElementById('migration');
+  var horizon = document.getElementById('horizon');
+  var exposure = document.getElementById('exposure');
+
+  function sync() {
+    state.profile.shelfLife = Number(shelf.value);
+    state.profile.migrationYears = Number(migration.value);
+    state.profile.crqcYear = Number(horizon.value);
+    state.profile.exposure = exposure.value;
+    document.getElementById('shelfOut').textContent = shelf.value;
+    document.getElementById('migrationOut').textContent = migration.value;
+    document.getElementById('horizonOut').textContent = horizon.value;
+    render();
+  }
+  [shelf, migration, horizon].forEach(function (input) { input.addEventListener('input', sync); });
+  exposure.addEventListener('change', sync);
+
+  document.getElementById('search').addEventListener('input', function (event) {
+    state.filter = event.target.value.trim().toLowerCase();
+    render();
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (tab) {
+    tab.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (other) { other.classList.remove('active'); });
+      tab.classList.add('active');
+      state.panel = tab.getAttribute('data-panel');
+      ['inventory', 'debt', 'roadmap'].forEach(function (name) {
+        document.getElementById(name).hidden = name !== state.panel;
+      });
+    });
+  });
+
+  var file = document.getElementById('file');
+  document.getElementById('load').addEventListener('click', function () { file.click(); });
+  file.addEventListener('change', function () {
+    if (!file.files || !file.files[0]) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try { load(String(reader.result)); } catch (error) { fail(error.message); }
+    };
+    reader.readAsText(file.files[0]);
+  });
+
+  document.getElementById('parse').addEventListener('click', function () {
+    try { load(document.getElementById('paste').value); } catch (error) { fail('That is not valid JSON. ' + error.message); }
+  });
+
+  document.getElementById('sample').addEventListener('click', function () {
+    load(sampleScan());
+  });
+
+  document.getElementById('download').addEventListener('click', function () {
+    var payload = JSON.stringify({ profile: state.profile, estate: state.estate, scan: state.scan }, null, 2);
+    var blob = new Blob([payload], { type: 'application/json' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'miftah-report.json';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  });
+
+  ['dragover', 'dragenter'].forEach(function (name) {
+    document.addEventListener(name, function (event) { event.preventDefault(); document.body.classList.add('dragging'); });
+  });
+  ['dragleave', 'drop'].forEach(function (name) {
+    document.addEventListener(name, function (event) { event.preventDefault(); document.body.classList.remove('dragging'); });
+  });
+  document.addEventListener('drop', function (event) {
+    var dropped = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+    if (!dropped) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try { load(String(reader.result)); } catch (error) { fail(error.message); }
+    };
+    reader.readAsText(dropped);
+  });
+}
+
+function sampleScan() {
+  return {
+    target: 'sample estate',
+    filesScanned: 42,
+    findings: [
+      { rule: 'MFT-H002', title: 'SHA-1 in use', severity: 'high', file: 'src/sign.js', line: 18, advice: 'Replace with SHA-256.', algorithm: 'SHA-1' },
+      { rule: 'MFT-K001', title: 'Hard coded secret', severity: 'critical', file: 'config/app.yaml', line: 7, advice: 'Move to a KMS and rotate.' },
+      { rule: 'MFT-A003', title: 'ECDH key agreement', severity: 'high', file: 'src/tls.js', line: 44, advice: 'Move to X25519MLKEM768.', algorithm: 'ECDH' }
+    ],
+    assets: [
+      { id: 'SHA-1', name: 'SHA-1', primitive: 'hash', classical: 'broken', quantum: 'broken', replacement: 'SHA-256', occurrences: [{ file: 'src/sign.js', line: 18 }] },
+      { id: 'ECDH', name: 'ECDH', primitive: 'key-agree', classical: 'strong', quantum: 'broken', replacement: 'X25519MLKEM768 hybrid key exchange', occurrences: [{ file: 'src/tls.js', line: 44 }, { file: 'src/peer.js', line: 9 }] },
+      { id: 'RSA-2048', name: 'RSA 2048', primitive: 'pke', classical: 'acceptable', quantum: 'broken', replacement: 'ML-KEM-768', occurrences: [{ file: 'src/keys.js', line: 3 }] },
+      { id: 'AES-128', name: 'AES-128', primitive: 'block-cipher', classical: 'strong', quantum: 'weakened', replacement: 'AES-256', occurrences: [{ file: 'src/store.js', line: 21 }] },
+      { id: 'AES-256', name: 'AES-256', primitive: 'block-cipher', classical: 'strong', quantum: 'resistant', occurrences: [{ file: 'src/vault.js', line: 12 }] }
+    ]
+  };
+}
+
+window.miftah = {
+  load: load,
+  render: render,
+  scoreEstate: scoreEstate,
+  moscaDeficit: moscaDeficit,
+  sampleScan: sampleScan,
+  state: state,
+  ready: function () { bind(); if (state.scan) render(); }
+};
+
+</script>
+<script>
+(function () {
+  var seeded = {"target":"/home/claude/miftah/examples/sample-estate","startedAt":"2026-09-03T09:13:17.983Z","durationMs":14,"filesFound":7,"filesScanned":7,"filesSkipped":0,"findings":[{"rule":"MFT-T001","title":"Deprecated TLS version permitted","severity":"high","algorithm":null,"mode":null,"protocol":"tls","materialType":null,"assetLabel":"TLS configuration","assetPrimitive":null,"classical":"broken","quantum":"unknown","advice":"Require TLS 1.2 as a floor and TLS 1.3 wherever the peer supports it.","file":"config/app.yaml","line":4,"column":22,"bits":null,"detail":"","evidence":"minimum_version: TLSv1.1"},{"rule":"MFT-H001","title":"MD5 in use","severity":"high","algorithm":"MD5","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"broken","advice":"Replace with SHA-256. For passwords move to Argon2id.","file":"config/app.yaml","line":5,"column":53,"bits":null,"detail":"","evidence":"ciphers: \"ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:RC4-MD5\""},{"rule":"MFT-C001","title":"Triple DES in use","severity":"high","algorithm":"3DES","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"broken","advice":"Replace with AES-256-GCM. Disallowed by NIST SP 800 131A.","file":"config/app.yaml","line":5,"column":36,"bits":null,"detail":"","evidence":"ciphers: \"ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:RC4-MD5\""},{"rule":"MFT-C003","title":"RC4 in use","severity":"critical","algorithm":"RC4","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"broken","advice":"Remove. Prohibited in TLS by RFC 7465.","file":"config/app.yaml","line":5,"column":49,"bits":null,"detail":"","evidence":"ciphers: \"ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:RC4-MD5\""},{"rule":"MFT-C007","title":"AES-128 recorded","severity":"low","algorithm":"AES-128","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"weakened","advice":"Move to AES-256 for anything with a secrecy horizon past 2035.","file":"config/app.yaml","line":5,"column":25,"bits":null,"detail":"","evidence":"ciphers: \"ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:RC4-MD5\""},{"rule":"MFT-A001","title":"RSA in use","severity":"medium","algorithm":"RSA","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"acceptable","quantum":"broken","advice":"Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.","file":"config/app.yaml","line":5,"column":21,"bits":null,"detail":"","evidence":"ciphers: \"ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:RC4-MD5\""},{"rule":"MFT-A003","title":"ECDH or ECDHE key agreement","severity":"high","algorithm":"ECDH","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"broken","advice":"Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.","file":"config/app.yaml","line":5,"column":15,"bits":null,"detail":"","evidence":"ciphers: \"ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:RC4-MD5\""},{"rule":"MFT-H004","title":"SHA-256 recorded","severity":"info","algorithm":"SHA-256","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"weakened","advice":"Sound today. Move long lived artefacts to SHA-384.","file":"config/app.yaml","line":9,"column":9,"bits":null,"detail":"","evidence":"hash: sha256"},{"rule":"MFT-C008","title":"AES-256 recorded","severity":"info","algorithm":"AES-256","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"resistant","advice":"No action. AES-256 survives Grover.","file":"config/app.yaml","line":10,"column":11,"bits":null,"detail":"","evidence":"cipher: aes-256-gcm"},{"rule":"MFT-K001","title":"Hard coded secret","severity":"critical","algorithm":null,"mode":null,"protocol":null,"materialType":"secret-key","assetLabel":"Embedded secret key material","assetPrimitive":null,"classical":"broken","quantum":"unknown","advice":"Move to a KMS or an HSM and rotate the exposed value. A key in source is a key in every clone.","file":"config/app.yaml","line":16,"column":3,"bits":null,"detail":"c2Vjcm...aW5n (40 chars)","evidence":"signing_key: \"c2Vj...5n\""},{"rule":"MFT-H002","title":"SHA-1 in use","severity":"high","algorithm":"SHA-1","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"broken","advice":"Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.","file":"config/sshd_config","line":3,"column":38,"bits":null,"detail":"","evidence":"KexAlgorithms diffie-hellman-group14-sha1,curve25519-sha256"},{"rule":"MFT-H004","title":"SHA-256 recorded","severity":"info","algorithm":"SHA-256","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"weakened","advice":"Sound today. Move long lived artefacts to SHA-384.","file":"config/sshd_config","line":3,"column":54,"bits":null,"detail":"","evidence":"KexAlgorithms diffie-hellman-group14-sha1,curve25519-sha256"},{"rule":"MFT-A004","title":"Finite field Diffie Hellman","severity":"high","algorithm":"DH","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"acceptable","quantum":"broken","advice":"Move to the X25519MLKEM768 hybrid group.","file":"config/sshd_config","line":3,"column":15,"bits":null,"detail":"","evidence":"KexAlgorithms diffie-hellman-group14-sha1,curve25519-sha256"},{"rule":"MFT-A006","title":"Ed25519 or X25519 in use","severity":"medium","algorithm":"ED25519","mode":null,"protocol":null,"materialType":null,"assetLabel":"Curve25519 family","assetPrimitive":null,"classical":"strong","quantum":"broken","advice":"Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.","file":"config/sshd_config","line":3,"column":43,"bits":null,"detail":"","evidence":"KexAlgorithms diffie-hellman-group14-sha1,curve25519-sha256"},{"rule":"MFT-S001","title":"Weak SSH algorithm permitted","severity":"high","algorithm":null,"mode":null,"protocol":"ssh","materialType":null,"assetLabel":"SSH configuration","assetPrimitive":null,"classical":"weak","quantum":"broken","advice":"Restrict to rsa-sha2-512, ssh-ed25519 and sntrup761x25519-sha512 in sshd_config.","file":"config/sshd_config","line":3,"column":15,"bits":null,"detail":"","evidence":"KexAlgorithms diffie-hellman-group14-sha1,curve25519-sha256"},{"rule":"MFT-A001","title":"RSA in use","severity":"medium","algorithm":"RSA","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"acceptable","quantum":"broken","advice":"Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.","file":"config/sshd_config","line":4,"column":23,"bits":null,"detail":"","evidence":"HostKeyAlgorithms ssh-rsa,ssh-ed25519"},{"rule":"MFT-A006","title":"Ed25519 or X25519 in use","severity":"medium","algorithm":"ED25519","mode":null,"protocol":null,"materialType":null,"assetLabel":"Curve25519 family","assetPrimitive":null,"classical":"strong","quantum":"broken","advice":"Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.","file":"config/sshd_config","line":4,"column":31,"bits":null,"detail":"","evidence":"HostKeyAlgorithms ssh-rsa,ssh-ed25519"},{"rule":"MFT-S001","title":"Weak SSH algorithm permitted","severity":"high","algorithm":null,"mode":null,"protocol":"ssh","materialType":null,"assetLabel":"SSH configuration","assetPrimitive":null,"classical":"weak","quantum":"broken","advice":"Restrict to rsa-sha2-512, ssh-ed25519 and sntrup761x25519-sha512 in sshd_config.","file":"config/sshd_config","line":4,"column":19,"bits":null,"detail":"","evidence":"HostKeyAlgorithms ssh-rsa,ssh-ed25519"},{"rule":"MFT-C007","title":"AES-128 recorded","severity":"low","algorithm":"AES-128","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"weakened","advice":"Move to AES-256 for anything with a secrecy horizon past 2035.","file":"config/sshd_config","line":5,"column":9,"bits":null,"detail":"","evidence":"Ciphers aes128-cbc,aes256-gcm@openssh.com"},{"rule":"MFT-C008","title":"AES-256 recorded","severity":"info","algorithm":"AES-256","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"resistant","advice":"No action. AES-256 survives Grover.","file":"config/sshd_config","line":5,"column":20,"bits":null,"detail":"","evidence":"Ciphers aes128-cbc,aes256-gcm@openssh.com"},{"rule":"MFT-H002","title":"SHA-1 in use","severity":"high","algorithm":"SHA-1","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"broken","advice":"Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.","file":"config/sshd_config","line":6,"column":6,"bits":null,"detail":"","evidence":"MACs hmac-sha1,hmac-sha2-256"},{"rule":"MFT-S001","title":"Weak SSH algorithm permitted","severity":"high","algorithm":null,"mode":null,"protocol":"ssh","materialType":null,"assetLabel":"SSH configuration","assetPrimitive":null,"classical":"weak","quantum":"broken","advice":"Restrict to rsa-sha2-512, ssh-ed25519 and sntrup761x25519-sha512 in sshd_config.","file":"config/sshd_config","line":6,"column":6,"bits":null,"detail":"","evidence":"MACs hmac-sha1,hmac-sha2-256"},{"rule":"MFT-H002","title":"SHA-1 in use","severity":"high","algorithm":"SHA-1","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"broken","advice":"Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.","file":"src/client.py","line":7,"column":20,"bits":null,"detail":"","evidence":"return hashlib.sha1(payload).hexdigest()"},{"rule":"MFT-T002","title":"Certificate verification disabled","severity":"critical","algorithm":null,"mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"unknown","advice":"Verification off means any interception succeeds. Pin a trust store instead.","file":"src/client.py","line":10,"column":30,"bits":null,"detail":"","evidence":"return requests.get(url, verify=False)"},{"rule":"MFT-T002","title":"Certificate verification disabled","severity":"critical","algorithm":null,"mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"unknown","advice":"Verification off means any interception succeeds. Pin a trust store instead.","file":"src/client.py","line":14,"column":9,"bits":null,"detail":"","evidence":"ctx.check_hostname = False"},{"rule":"MFT-A001","title":"RSA in use","severity":"medium","algorithm":"RSA","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"acceptable","quantum":"broken","advice":"Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.","file":"src/keys.js","line":5,"column":38,"bits":2048,"detail":"modulus 2048 bits","evidence":"return crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });"},{"rule":"MFT-A001","title":"RSA in use","severity":"high","algorithm":"RSA","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"acceptable","quantum":"broken","advice":"Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.","file":"src/keys.js","line":9,"column":38,"bits":1024,"detail":"modulus 1024 bits","evidence":"return crypto.generateKeyPairSync('rsa', { modulusLength: 1024 });"},{"rule":"MFT-A003","title":"ECDH or ECDHE key agreement","severity":"high","algorithm":"ECDH","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"broken","advice":"Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.","file":"src/keys.js","line":13,"column":9,"bits":null,"detail":"","evidence":"const ecdh = crypto.createECDH('prime256v1');"},{"rule":"MFT-A003","title":"ECDH or ECDHE key agreement","severity":"high","algorithm":"ECDH","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"broken","advice":"Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.","file":"src/keys.js","line":14,"column":3,"bits":null,"detail":"","evidence":"ecdh.setPrivateKey(privateKey);"},{"rule":"MFT-A003","title":"ECDH or ECDHE key agreement","severity":"high","algorithm":"ECDH","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"broken","advice":"Move to the X25519MLKEM768 hybrid group. Session keys are the harvest now decrypt later target.","file":"src/keys.js","line":15,"column":10,"bits":null,"detail":"","evidence":"return ecdh.computeSecret(peerPublicKey);"},{"rule":"MFT-H004","title":"SHA-256 recorded","severity":"info","algorithm":"SHA-256","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"weakened","advice":"Sound today. Move long lived artefacts to SHA-384.","file":"src/keys.js","line":19,"column":29,"bits":null,"detail":"","evidence":"return crypto.createSign('SHA256').update(payload).sign({ key, padding: crypto.constants.RSA_PKCS1_PADDING });"},{"rule":"MFT-A001","title":"RSA in use","severity":"medium","algorithm":"RSA","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"acceptable","quantum":"broken","advice":"Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures.","file":"src/keys.js","line":19,"column":92,"bits":null,"detail":"","evidence":"return crypto.createSign('SHA256').update(payload).sign({ key, padding: crypto.constants.RSA_PKCS1_PADDING });"},{"rule":"MFT-A008","title":"RSA PKCS number 1 v1.5 encryption padding","severity":"high","algorithm":"RSA","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"weak","quantum":"broken","advice":"Use OAEP for encryption and PSS for signatures. Bleichenbacher oracles keep resurfacing.","file":"src/keys.js","line":19,"column":92,"bits":null,"detail":"","evidence":"return crypto.createSign('SHA256').update(payload).sign({ key, padding: crypto.constants.RSA_PKCS1_PADDING });"},{"rule":"MFT-A006","title":"Ed25519 or X25519 in use","severity":"medium","algorithm":"ED25519","mode":null,"protocol":null,"materialType":null,"assetLabel":"Curve25519 family","assetPrimitive":null,"classical":"strong","quantum":"broken","advice":"Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.","file":"src/keys.js","line":23,"column":46,"bits":null,"detail":"","evidence":"return crypto.sign(null, payload, key); // ed25519"},{"rule":"MFT-H001","title":"MD5 in use","severity":"high","algorithm":"MD5","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"broken","advice":"Replace with SHA-256. For passwords move to Argon2id.","file":"src/legacy.js","line":5,"column":29,"bits":null,"detail":"","evidence":"return crypto.createHash('md5').update(input).digest('hex');"},{"rule":"MFT-H002","title":"SHA-1 in use","severity":"high","algorithm":"SHA-1","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"broken","advice":"Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.","file":"src/legacy.js","line":9,"column":29,"bits":null,"detail":"","evidence":"return crypto.createSign('sha1').update(input).sign(key);"},{"rule":"MFT-C001","title":"Triple DES in use","severity":"high","algorithm":"3DES","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"broken","quantum":"broken","advice":"Replace with AES-256-GCM. Disallowed by NIST SP 800 131A.","file":"src/legacy.js","line":13,"column":41,"bits":null,"detail":"","evidence":"const cipher = crypto.createCipheriv('des-ede3-cbc', key, Buffer.alloc(8));"},{"rule":"MFT-C006","title":"ECB mode","severity":"high","algorithm":null,"mode":"ECB","protocol":null,"materialType":null,"assetLabel":"ECB mode","assetPrimitive":"block-cipher","classical":"broken","quantum":"unknown","advice":"Move to GCM. ECB leaks plaintext structure whatever the cipher.","file":"src/legacy.js","line":18,"column":41,"bits":null,"detail":"","evidence":"const cipher = crypto.createCipheriv('aes-128-ecb', key, null);"},{"rule":"MFT-C007","title":"AES-128 recorded","severity":"low","algorithm":"AES-128","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"weakened","advice":"Move to AES-256 for anything with a secrecy horizon past 2035.","file":"src/legacy.js","line":18,"column":41,"bits":null,"detail":"","evidence":"const cipher = crypto.createCipheriv('aes-128-ecb', key, null);"},{"rule":"MFT-A006","title":"Ed25519 or X25519 in use","severity":"medium","algorithm":"ED25519","mode":null,"protocol":null,"materialType":null,"assetLabel":"Curve25519 family","assetPrimitive":null,"classical":"strong","quantum":"broken","advice":"Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.","file":"src/modern.js","line":4,"column":47,"bits":null,"detail":"","evidence":"export const KEX_GROUPS = ['X25519MLKEM768', 'x25519'];"},{"rule":"MFT-P004","title":"Hybrid key exchange group in use","severity":"info","algorithm":"X25519MLKEM768","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"resistant","advice":"This is the right shape. Widen it to the rest of the estate.","file":"src/modern.js","line":4,"column":29,"bits":null,"detail":"","evidence":"export const KEX_GROUPS = ['X25519MLKEM768', 'x25519'];"},{"rule":"MFT-P002","title":"ML-DSA in use","severity":"info","algorithm":"ML-DSA-65","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"resistant","advice":"Already on the destination.","file":"src/modern.js","line":5,"column":33,"bits":null,"detail":"","evidence":"export const SIGNATURE_SUITE = 'ML-DSA-65';"},{"rule":"MFT-C008","title":"AES-256 recorded","severity":"info","algorithm":"AES-256","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"resistant","advice":"No action. AES-256 survives Grover.","file":"src/modern.js","line":9,"column":41,"bits":null,"detail":"","evidence":"const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);"},{"rule":"MFT-H004","title":"SHA-256 recorded","severity":"info","algorithm":"SHA-256","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"strong","quantum":"weakened","advice":"Sound today. Move long lived artefacts to SHA-384.","file":"src/modern.js","line":18,"column":57,"bits":null,"detail":"","evidence":"return crypto.pbkdf2Sync(password, salt, 600000, 32, 'sha256');"},{"rule":"MFT-K005","title":"PBKDF2 iteration count meets guidance","severity":"info","algorithm":"PBKDF2","mode":null,"protocol":null,"materialType":null,"assetLabel":null,"assetPrimitive":null,"classical":"weak","quantum":"weakened","advice":"Raise to at least 600000 with SHA-256, or move to Argon2id.","file":"src/modern.js","line":18,"column":17,"bits":null,"detail":"600000 iterations","evidence":"return crypto.pbkdf2Sync(password, salt, 600000, 32, 'sha256');"}],"assets":[{"id":"RC4","name":"RC4","algorithm":"RC4","mode":null,"protocol":null,"materialType":null,"primitive":"stream-cipher","classical":"broken","quantum":"broken","nistLevel":0,"oid":null,"replacement":"ChaCha20-Poly1305 or AES-256-GCM","note":"Biased keystream. Prohibited in TLS by RFC 7465.","bits":null,"functions":["encrypt","decrypt"],"severity":"critical","occurrences":[{"file":"config/app.yaml","line":5,"rule":"MFT-C003"}]},{"id":"secret-key","name":"Embedded secret key material","algorithm":null,"mode":null,"protocol":null,"materialType":"secret-key","primitive":"unknown","classical":"broken","quantum":"unknown","nistLevel":0,"oid":null,"replacement":null,"note":"","bits":null,"functions":[],"severity":"critical","occurrences":[{"file":"config/app.yaml","line":16,"rule":"MFT-K001","detail":"c2Vjcm...aW5n (40 chars)"}]},{"id":"RSA","name":"RSA","algorithm":"RSA","mode":null,"protocol":null,"materialType":null,"primitive":"pke","classical":"acceptable","quantum":"broken","nistLevel":0,"oid":"1.2.840.113549.1.1.1","replacement":"ML-KEM-768 for key establishment, ML-DSA-65 for signatures","note":"Factoring. A cryptographically relevant quantum computer recovers the private key.","bits":null,"functions":["encrypt","decrypt","sign","verify"],"severity":"high","occurrences":[{"file":"config/app.yaml","line":5,"rule":"MFT-A001"},{"file":"config/sshd_config","line":4,"rule":"MFT-A001"},{"file":"src/keys.js","line":19,"rule":"MFT-A001"},{"file":"src/keys.js","line":19,"rule":"MFT-A008"}]},{"id":"ECDH","name":"ECDH","algorithm":"ECDH","mode":null,"protocol":null,"materialType":null,"primitive":"key-agree","classical":"strong","quantum":"broken","nistLevel":0,"oid":"1.3.132.1.12","replacement":"X25519MLKEM768 hybrid key exchange","note":"Elliptic curve discrete log. Breaks faster than RSA on the same machine.","bits":null,"functions":["keyderive"],"severity":"high","occurrences":[{"file":"config/app.yaml","line":5,"rule":"MFT-A003"},{"file":"src/keys.js","line":13,"rule":"MFT-A003"},{"file":"src/keys.js","line":14,"rule":"MFT-A003"},{"file":"src/keys.js","line":15,"rule":"MFT-A003"}]},{"id":"SHA-1","name":"SHA-1","algorithm":"SHA-1","mode":null,"protocol":null,"materialType":null,"primitive":"hash","classical":"broken","quantum":"broken","nistLevel":0,"oid":"1.3.14.3.2.26","replacement":"SHA-256 or SHA-384","note":"SHAttered and Shambles produced practical collisions. NIST is retiring it entirely by 2030.","bits":null,"functions":["digest"],"severity":"high","occurrences":[{"file":"config/sshd_config","line":3,"rule":"MFT-H002"},{"file":"config/sshd_config","line":6,"rule":"MFT-H002"},{"file":"src/client.py","line":7,"rule":"MFT-H002"},{"file":"src/legacy.js","line":9,"rule":"MFT-H002"}]},{"id":"ssh","name":"SSH configuration","algorithm":null,"mode":null,"protocol":"ssh","materialType":null,"primitive":"unknown","classical":"weak","quantum":"broken","nistLevel":0,"oid":null,"replacement":null,"note":"","bits":null,"functions":[],"severity":"high","occurrences":[{"file":"config/sshd_config","line":3,"rule":"MFT-S001"},{"file":"config/sshd_config","line":4,"rule":"MFT-S001"},{"file":"config/sshd_config","line":6,"rule":"MFT-S001"}]},{"id":"MD5","name":"MD5","algorithm":"MD5","mode":null,"protocol":null,"materialType":null,"primitive":"hash","classical":"broken","quantum":"broken","nistLevel":0,"oid":"1.2.840.113549.2.5","replacement":"SHA-256 for integrity, Argon2id or scrypt for passwords","note":"Chosen prefix collisions cost seconds. Never acceptable for signatures or certificates.","bits":null,"functions":["digest"],"severity":"high","occurrences":[{"file":"config/app.yaml","line":5,"rule":"MFT-H001"},{"file":"src/legacy.js","line":5,"rule":"MFT-H001"}]},{"id":"3DES","name":"3DES","algorithm":"3DES","mode":null,"protocol":null,"materialType":null,"primitive":"block-cipher","classical":"broken","quantum":"broken","nistLevel":0,"oid":"1.2.840.113549.3.7","replacement":"AES-256-GCM","note":"Sweet32 birthday attack on the 64 bit block. Disallowed by NIST SP 800 131A after 2023.","bits":null,"functions":["encrypt","decrypt"],"severity":"high","occurrences":[{"file":"config/app.yaml","line":5,"rule":"MFT-C001"},{"file":"src/legacy.js","line":13,"rule":"MFT-C001"}]},{"id":"tls","name":"TLS configuration","algorithm":null,"mode":null,"protocol":"tls","materialType":null,"primitive":"unknown","classical":"broken","quantum":"unknown","nistLevel":0,"oid":null,"replacement":null,"note":"","bits":null,"functions":[],"severity":"high","occurrences":[{"file":"config/app.yaml","line":4,"rule":"MFT-T001"}]},{"id":"DH","name":"DH","algorithm":"DH","mode":null,"protocol":null,"materialType":null,"primitive":"key-agree","classical":"acceptable","quantum":"broken","nistLevel":0,"oid":"1.2.840.113549.1.3.1","replacement":"X25519MLKEM768 hybrid key exchange","note":"Finite field discrete log.","bits":null,"functions":["keyderive"],"severity":"high","occurrences":[{"file":"config/sshd_config","line":3,"rule":"MFT-A004"}]},{"id":"RSA-1024","name":"RSA 1024","algorithm":"RSA","mode":null,"protocol":null,"materialType":null,"primitive":"pke","classical":"acceptable","quantum":"broken","nistLevel":0,"oid":"1.2.840.113549.1.1.1","replacement":"ML-KEM-768 for key establishment, ML-DSA-65 for signatures","note":"Factoring. A cryptographically relevant quantum computer recovers the private key.","bits":1024,"functions":["encrypt","decrypt","sign","verify"],"severity":"high","occurrences":[{"file":"src/keys.js","line":9,"rule":"MFT-A001","detail":"modulus 1024 bits"}]},{"id":"ECB","name":"ECB mode","algorithm":null,"mode":"ECB","protocol":null,"materialType":null,"primitive":"block-cipher","classical":"broken","quantum":"unknown","nistLevel":0,"oid":null,"replacement":null,"note":"","bits":null,"functions":[],"severity":"high","occurrences":[{"file":"src/legacy.js","line":18,"rule":"MFT-C006"}]},{"id":"ED25519","name":"Curve25519 family","algorithm":"ED25519","mode":null,"protocol":null,"materialType":null,"primitive":"signature","classical":"strong","quantum":"broken","nistLevel":0,"oid":"1.3.101.112","replacement":"ML-DSA-65","note":"Edwards curve discrete log.","bits":null,"functions":["sign","verify"],"severity":"medium","occurrences":[{"file":"config/sshd_config","line":3,"rule":"MFT-A006"},{"file":"config/sshd_config","line":4,"rule":"MFT-A006"},{"file":"src/keys.js","line":23,"rule":"MFT-A006"},{"file":"src/modern.js","line":4,"rule":"MFT-A006"}]},{"id":"RSA-2048","name":"RSA 2048","algorithm":"RSA","mode":null,"protocol":null,"materialType":null,"primitive":"pke","classical":"acceptable","quantum":"broken","nistLevel":0,"oid":"1.2.840.113549.1.1.1","replacement":"ML-KEM-768 for key establishment, ML-DSA-65 for signatures","note":"Factoring. A cryptographically relevant quantum computer recovers the private key.","bits":2048,"functions":["encrypt","decrypt","sign","verify"],"severity":"medium","occurrences":[{"file":"src/keys.js","line":5,"rule":"MFT-A001","detail":"modulus 2048 bits"}]},{"id":"AES-128","name":"AES-128","algorithm":"AES-128","mode":null,"protocol":null,"materialType":null,"primitive":"block-cipher","classical":"strong","quantum":"weakened","nistLevel":1,"oid":"2.16.840.1.101.3.4.1.2","replacement":"AES-256","note":"Grover leaves about 64 bits of effective strength. Fine today, thin for a long secrecy horizon.","bits":null,"functions":["encrypt","decrypt"],"severity":"low","occurrences":[{"file":"config/app.yaml","line":5,"rule":"MFT-C007"},{"file":"config/sshd_config","line":5,"rule":"MFT-C007"},{"file":"src/legacy.js","line":18,"rule":"MFT-C007"}]},{"id":"SHA-256","name":"SHA-256","algorithm":"SHA-256","mode":null,"protocol":null,"materialType":null,"primitive":"hash","classical":"strong","quantum":"weakened","nistLevel":2,"oid":"2.16.840.1.101.3.4.2.1","replacement":null,"note":"Sound today. Prefer SHA-384 where the artefact must stay trustworthy past 2035.","bits":null,"functions":["digest"],"severity":"info","occurrences":[{"file":"config/app.yaml","line":9,"rule":"MFT-H004"},{"file":"config/sshd_config","line":3,"rule":"MFT-H004"},{"file":"src/keys.js","line":19,"rule":"MFT-H004"},{"file":"src/modern.js","line":18,"rule":"MFT-H004"}]},{"id":"AES-256","name":"AES-256","algorithm":"AES-256","mode":null,"protocol":null,"materialType":null,"primitive":"block-cipher","classical":"strong","quantum":"resistant","nistLevel":5,"oid":"2.16.840.1.101.3.4.1.42","replacement":null,"note":"Holds up against Grover. No migration needed.","bits":null,"functions":["encrypt","decrypt"],"severity":"info","occurrences":[{"file":"config/app.yaml","line":10,"rule":"MFT-C008"},{"file":"config/sshd_config","line":5,"rule":"MFT-C008"},{"file":"src/modern.js","line":9,"rule":"MFT-C008"}]},{"id":"X25519MLKEM768","name":"X25519MLKEM768","algorithm":"X25519MLKEM768","mode":null,"protocol":null,"materialType":null,"primitive":"combiner","classical":"strong","quantum":"resistant","nistLevel":3,"oid":null,"replacement":null,"note":"Hybrid group. Safe against a break in either half, so it is the right thing to deploy first.","bits":null,"functions":["keyderive","encapsulate"],"severity":"info","occurrences":[{"file":"src/modern.js","line":4,"rule":"MFT-P004"}]},{"id":"ML-DSA-65","name":"ML-DSA-65","algorithm":"ML-DSA-65","mode":null,"protocol":null,"materialType":null,"primitive":"signature","classical":"strong","quantum":"resistant","nistLevel":3,"oid":"2.16.840.1.101.3.4.3.18","replacement":null,"note":"FIPS 204. The default choice for certificates and code signing.","bits":null,"functions":["sign","verify","keygen"],"severity":"info","occurrences":[{"file":"src/modern.js","line":5,"rule":"MFT-P002"}]},{"id":"PBKDF2","name":"PBKDF2","algorithm":"PBKDF2","mode":null,"protocol":null,"materialType":null,"primitive":"kdf","classical":"weak","quantum":"weakened","nistLevel":0,"oid":null,"replacement":null,"note":"Strength rests entirely on the iteration count. Under 600000 with SHA-256 is below OWASP guidance.","bits":null,"functions":["keyderive"],"severity":"info","occurrences":[{"file":"src/modern.js","line":18,"rule":"MFT-K005","detail":"600000 iterations"}]}]};
+  window.MIFTAH_VERSION = "0.1.0";
+  if (seeded) window.miftah.load(seeded);
+  window.miftah.ready();
+})();
+</script>
+</body>
+</html>
