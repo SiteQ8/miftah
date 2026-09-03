@@ -3,22 +3,22 @@
 ما التشفير الذي نشغله فعلا وما الذي ينكسر أولا.
 
 الهدف: `/home/claude/miftah/examples/sample-estate`
-تاريخ الإصدار: 2026-09-03T09:56:58.994Z
+تاريخ الإصدار: 2026-09-03T10:30:08.812Z
 
 ## الخلاصة
 
 | | |
 | --- | --- |
-| الجاهزية لما بعد الكم | 22 / 100 |
+| الجاهزية لما بعد الكم | 21 / 100 |
 | أعلى خطورة لأصل واحد | 77 (حرجة) |
-| أصول التشفير | 20 |
-| أصول تحتاج انتقالا | 14 |
+| أصول التشفير | 21 |
+| أصول تحتاج انتقالا | 15 |
 | أصول مقاومة للكم | 3 |
-| النتائج | 45 |
+| النتائج | 47 |
 | الملفات المقروءة | 7 |
-| درجة المرونة | 38 / 100 |
+| درجة المرونة | 25 / 100 |
 
-حرجة 4, عالية 20, متوسطة 8, منخفضة 3, معلومة 10.
+حرجة 5, عالية 21, متوسطة 8, منخفضة 3, معلومة 10.
 
 ## الأفق الزمني
 
@@ -36,6 +36,7 @@
 
 | الأصل | النوع | كلاسيكيا | كميا | الخطورة | الاستخدامات | الوجهة |
 | --- | --- | --- | --- | ---: | ---: | --- |
+| DES | block-cipher | مكسور | مكسور بخوارزمية شور | 74 | 1 | AES-256-GCM |
 | RC4 | stream-cipher | مكسور | مكسور بخوارزمية شور | 74 | 1 | ChaCha20-Poly1305 or AES-256-GCM |
 | Embedded secret key material | unknown | مكسور | غير محدد | 48 | 1 |  |
 | RSA | pke | مقبول | مكسور بخوارزمية شور | 49 | 4 | ML-KEM-768 for key establishment, ML-DSA-65 for signatures |
@@ -64,6 +65,7 @@
 | عالية | Deprecated TLS version permitted | `config/app.yaml:4` | Require TLS 1.2 as a floor and TLS 1.3 wherever the peer supports it. |
 | عالية | MD5 in use | `config/app.yaml:5` | Replace with SHA-256. For passwords move to Argon2id. |
 | عالية | Triple DES in use | `config/app.yaml:5` | Replace with AES-256-GCM. Disallowed by NIST SP 800 131A. |
+| حرجة | Single DES in use | `config/app.yaml:5` | Replace with AES-256-GCM. A 56 bit key falls in hours. |
 | حرجة | RC4 in use | `config/app.yaml:5` | Remove. Prohibited in TLS by RFC 7465. |
 | منخفضة | AES-128 recorded | `config/app.yaml:5` | Move to AES-256 for anything with a secrecy horizon past 2035. |
 | متوسطة | RSA in use | `config/app.yaml:5` | Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures. |
@@ -95,13 +97,14 @@
 | عالية | Triple DES in use | `src/legacy.js:13` | Replace with AES-256-GCM. Disallowed by NIST SP 800 131A. |
 | عالية | ECB mode | `src/legacy.js:18` | Move to GCM. ECB leaks plaintext structure whatever the cipher. |
 | منخفضة | AES-128 recorded | `src/legacy.js:18` | Move to AES-256 for anything with a secrecy horizon past 2035. |
+| عالية | Non cryptographic randomness in a cryptographic context | `src/legacy.js:23` | Use crypto.randomBytes, secrets.token_bytes, or the platform CSPRNG. |
 | متوسطة | Ed25519 or X25519 in use | `src/modern.js:4` | Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside. |
 
 ## خارطة الانتقال
 
 ### الإجراءات ذات الأولوية
 
-1. **Remove 9 broken or weak primitives before anything else** SHA-1, MD5, 3DES, RC4, SSH configuration
+1. **Remove 10 broken or weak primitives before anything else** SHA-1, MD5, 3DES, DES, RC4
 2. **Rotate every key found in the tree and purge it from history** A key in a repository is a key in every clone, every fork and every backup.
 3. **Turn certificate verification back on** Disabled verification defeats the transport layer entirely, quantum computers not required.
 4. **Generate the CBOM in CI and fail the build on new quantum exposed dependencies** miftah scan . --cbom cbom.json --fail-on high
@@ -122,6 +125,7 @@ Remove cryptography that is already broken against a classical attacker. None of
 | SHA-1 | SHA-256 or SHA-384 | 77 | 4 | low |
 | MD5 | SHA-256 for integrity, Argon2id or scrypt for passwords | 75 | 2 | low |
 | 3DES | AES-256-GCM | 75 | 2 | low |
+| DES | AES-256-GCM | 74 | 1 | low |
 | RC4 | ChaCha20-Poly1305 or AES-256-GCM | 74 | 1 | low |
 | SSH configuration | rsa-sha2-512 and ssh-ed25519 host keys with sntrup761x25519-sha512 key exchange | 65 | 3 | low |
 | Embedded secret key material | a key management service, with the exposed value rotated | 48 | 1 | low |
@@ -178,19 +182,19 @@ Move certificates, code signing and firmware roots of trust to ML-DSA or a hash 
 
 ## مرونة التشفير
 
-درجة المرونة: 38 / 100
+درجة المرونة: 25 / 100
 
 | الحالة | البند | التوصية |
 | --- | --- | --- |
-| مطبق | A cryptographic inventory exists and is current | 20 cryptographic assets identified |
+| مطبق | A cryptographic inventory exists and is current | 21 cryptographic assets identified |
 | يحتاج مراجعة بشرية | The inventory is machine readable and regenerated automatically | Confirm miftah runs in the pipeline, not only by hand |
-| غير مطبق | No broken primitive remains in the estate | 10 occurrences of broken primitives |
+| غير مطبق | No broken primitive remains in the estate | 11 occurrences of broken primitives |
 | غير مطبق | No key material is held in source or configuration | 1 occurrences of embedded key material |
-| غير مطبق | Algorithm choices are configuration, not literals | 22 percent of algorithm references sit in configuration, the rest are hard coded |
+| غير مطبق | Algorithm choices are configuration, not literals | 24 percent of algorithm references sit in configuration, the rest are hard coded |
 | جزئي | Symmetric keys are 256 bits where the data outlives 2035 | AES-128, SHA-256, PBKDF2 leave reduced margin |
 | جزئي | Key establishment uses a hybrid post quantum group | Hybrid present alongside classical only paths |
 | يحتاج مراجعة بشرية | Certificates carry SHA-256 or stronger and expire inside 398 days | No certificates inspected in this run |
-| مطبق | Randomness comes from a cryptographic source everywhere | None found |
+| غير مطبق | Randomness comes from a cryptographic source everywhere | 1 occurrences of weak randomness or static IVs |
 | غير مطبق | Transport refuses anything below TLS 1.2 | 1 occurrences permitting TLS 1.1 or below |
 | يحتاج مراجعة بشرية | A named owner is accountable for the migration | Name the owner and the review cadence |
 | يحتاج مراجعة بشرية | Suppliers have been asked for their post quantum timeline | Supply a vendor list with --vendors to track this |

@@ -32,7 +32,20 @@ Ten years of required secrecy plus five years of migration against a 2033 horizo
 
 ## What it finds
 
-**In code and configuration.** 30 rules covering MD5, SHA-1, 3DES, DES, RC4, ECB mode, RSA and DH below 2048, static initialisation vectors, hard coded keys, weak randomness used in a cryptographic context, PBKDF2 iteration counts below guidance, deprecated TLS versions, and certificate verification switched off. Post quantum algorithms are detected too, so the inventory records what is already right.
+**In code and configuration.** Rules covering MD5, SHA-1, 3DES, DES, RC4, ECB mode, RSA and DH below 2048, static initialisation vectors, hard coded keys, weak randomness used in a cryptographic context, PBKDF2 iteration counts below guidance, deprecated TLS versions, and certificate verification switched off. Post quantum algorithms are detected too, so the inventory records what is already right.
+
+Each language is read in its own idioms, not in the JavaScript spelling of the same algorithm:
+
+| | |
+| --- | --- |
+| Java | `Cipher.getInstance("DESede/CBC/PKCS5Padding")`, `MessageDigest.getInstance("MD5")`, `KeyPairGenerator` sized on the next line |
+| C# | `SHA1Managed`, `TripleDESCryptoServiceProvider`, `CipherMode.ECB`, a validation callback that returns true |
+| Go | `crypto/des`, `des.NewCipher`, `InsecureSkipVerify`, `tls.VersionTLS10`, `math/rand` |
+| PHP | `mcrypt_encrypt`, `MCRYPT_3DES`, `MCRYPT_MODE_ECB`, `mt_rand` |
+| Ruby | `OpenSSL::Digest::MD5`, `OpenSSL::Cipher.new('DES-EDE3-CBC')` |
+| Swift | `CC_MD5`, `kCCAlgorithm3DES`, `kCCOptionECBMode` |
+
+All four spellings of 3DES above resolve to one asset in the inventory. A scanner that reads nothing is worse than no scanner, because a clean report retires the question.
 
 **In certificates.** Signature algorithm read from the DER, public key type and size, curve, and expiry. Graded on all three.
 
@@ -145,7 +158,7 @@ cd miftah
 node --test "test/*.test.js"
 ```
 
-84 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
+95 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
 
 ---
 

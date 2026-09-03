@@ -214,18 +214,18 @@
 
 <section>
   <h2>What a scan says</h2>
-  <p>Run against the sample estate in the repository: 45 findings across undefined files, reduced to 20 distinct cryptographic assets.</p>
+  <p>Run against the sample estate in the repository: 47 findings across undefined files, reduced to 21 distinct cryptographic assets.</p>
 
   <figure class="composition"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 76" width="860" height="76" role="img" aria-label="estate composition">
-<rect x="0.0" y="0" width="556.5" height="34" fill="#FF5A3C"/>
-<text x="278.2" y="22" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle" style="font-variant-numeric:tabular-nums">11</text>
-<rect x="556.5" y="0" width="151.8" height="34" fill="#FFB020"/>
-<text x="632.4" y="22" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" fill="#0B1A24" text-anchor="middle" style="font-variant-numeric:tabular-nums">3</text>
-<rect x="708.2" y="0" width="151.8" height="34" fill="#2FBF8F"/>
-<text x="784.1" y="22" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" fill="#0B1A24" text-anchor="middle" style="font-variant-numeric:tabular-nums">3</text>
+<rect x="0.0" y="0" width="573.3" height="34" fill="#FF5A3C"/>
+<text x="286.7" y="22" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle" style="font-variant-numeric:tabular-nums">12</text>
+<rect x="573.3" y="0" width="143.3" height="34" fill="#FFB020"/>
+<text x="645.0" y="22" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" fill="#0B1A24" text-anchor="middle" style="font-variant-numeric:tabular-nums">3</text>
+<rect x="716.7" y="0" width="143.3" height="34" fill="#2FBF8F"/>
+<text x="788.3" y="22" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" fill="#0B1A24" text-anchor="middle" style="font-variant-numeric:tabular-nums">3</text>
 <text x="0.0" y="60" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5A727F">broken</text>
-<text x="556.5" y="60" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5A727F">weakened</text>
-<text x="708.2" y="60" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5A727F">resistant</text>
+<text x="573.3" y="60" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5A727F">weakened</text>
+<text x="716.7" y="60" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" fill="#5A727F">resistant</text>
 </svg></figure>
 
   <table>
@@ -233,9 +233,9 @@
     <tr><td>SHA-1</td><td>77</td><td>SHA-256 or SHA-384</td></tr>
     <tr><td>MD5</td><td>75</td><td>SHA-256 for integrity, Argon2id or scrypt for passwords</td></tr>
     <tr><td>3DES</td><td>75</td><td>AES-256-GCM</td></tr>
+    <tr><td>DES</td><td>74</td><td>AES-256-GCM</td></tr>
     <tr><td>RC4</td><td>74</td><td>ChaCha20-Poly1305 or AES-256-GCM</td></tr>
     <tr><td>SSH configuration</td><td>65</td><td>review by hand</td></tr>
-    <tr><td>RSA</td><td>49</td><td>ML-KEM-768 for key establishment, ML-DSA-65 for signatures</td></tr>
   </table>
 
   <p><a href="sample-report-en.html">Read the full report</a>, or <a href="sample-report-ar.html">the same report in Arabic</a> with a mirrored timeline. The machine readable inventory is <a href="sample-cbom.json">here</a>.</p>
@@ -251,7 +251,8 @@
 <section>
   <h2>What it looks at</h2>
   <h3>Code and configuration</h3>
-  <p>Thirty rules covering broken hashes, legacy ciphers, ECB mode, undersized RSA and DH, static initialisation vectors, embedded keys, weak randomness in a cryptographic context, low PBKDF2 iteration counts, deprecated TLS and disabled certificate verification. Post quantum algorithms are detected too, so the inventory records what is already right rather than only what is wrong.</p>
+  <p>41 rules covering broken hashes, legacy ciphers, ECB mode, undersized RSA and DH, static initialisation vectors, embedded keys, weak randomness in a cryptographic context, low PBKDF2 iteration counts, deprecated TLS and disabled certificate verification. Post quantum algorithms are detected too, so the inventory records what is already right rather than only what is wrong.</p>
+  <p>Read in their own idioms: JavaScript, TypeScript, Python, <strong>Java</strong>, <strong>C#</strong>, <strong>Go</strong>, <strong>PHP</strong>, <strong>Ruby</strong>, <strong>Swift</strong>, Rust, Kotlin, shell and the usual configuration formats. <code>TripleDESCryptoServiceProvider</code>, <code>Cipher.getInstance("DESede/CBC/PKCS5Padding")</code>, <code>MCRYPT_3DES</code> and <code>kCCAlgorithm3DES</code> are the same asset, and all four are found. A scanner that reads nothing is worse than no scanner, because a clean report retires the question.</p>
   <h3>Certificates</h3>
   <p>Signature algorithm read straight out of the DER, public key type, size and curve, and expiry. Graded on all three, worst one wins.</p>
   <h3>The wire</h3>
@@ -286,7 +287,7 @@
 </main>
 
 <footer>
-  <div class="inner">Miftah v0.2.0. MIT licensed. Built by <a href="https://github.com/SiteQ8">Ali</a>.</div>
+  <div class="inner">Miftah v0.3.0. MIT licensed. Built by <a href="https://github.com/SiteQ8">Ali</a>.</div>
 </footer>
 
 </body>

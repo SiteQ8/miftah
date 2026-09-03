@@ -3,22 +3,22 @@
 What cryptography do we run, and what breaks first.
 
 Target: `/home/claude/miftah/examples/sample-estate`
-Generated: 2026-09-03T09:56:58.994Z
+Generated: 2026-09-03T10:30:08.812Z
 
 ## Summary
 
 | | |
 | --- | --- |
-| Post quantum readiness | 22 / 100 |
+| Post quantum readiness | 21 / 100 |
 | Highest asset risk | 77 (critical) |
-| Cryptographic assets | 20 |
-| Assets needing migration | 14 |
+| Cryptographic assets | 21 |
+| Assets needing migration | 15 |
 | Already quantum resistant | 3 |
-| Findings | 45 |
+| Findings | 47 |
 | Files read | 7 |
-| Agility score | 38 / 100 |
+| Agility score | 25 / 100 |
 
-critical 4, high 20, medium 8, low 3, info 10.
+critical 5, high 21, medium 8, low 3, info 10.
 
 ## The horizon
 
@@ -36,6 +36,7 @@ The secrecy requirement outruns the horizon by 8.67 years, so traffic recorded t
 
 | Asset | Primitive | Classical | Quantum | Risk | Uses | Target |
 | --- | --- | --- | --- | ---: | ---: | --- |
+| DES | block-cipher | broken | broken by Shor | 74 | 1 | AES-256-GCM |
 | RC4 | stream-cipher | broken | broken by Shor | 74 | 1 | ChaCha20-Poly1305 or AES-256-GCM |
 | Embedded secret key material | unknown | broken | unknown | 48 | 1 |  |
 | RSA | pke | acceptable | broken by Shor | 49 | 4 | ML-KEM-768 for key establishment, ML-DSA-65 for signatures |
@@ -64,6 +65,7 @@ The secrecy requirement outruns the horizon by 8.67 years, so traffic recorded t
 | high | Deprecated TLS version permitted | `config/app.yaml:4` | Require TLS 1.2 as a floor and TLS 1.3 wherever the peer supports it. |
 | high | MD5 in use | `config/app.yaml:5` | Replace with SHA-256. For passwords move to Argon2id. |
 | high | Triple DES in use | `config/app.yaml:5` | Replace with AES-256-GCM. Disallowed by NIST SP 800 131A. |
+| critical | Single DES in use | `config/app.yaml:5` | Replace with AES-256-GCM. A 56 bit key falls in hours. |
 | critical | RC4 in use | `config/app.yaml:5` | Remove. Prohibited in TLS by RFC 7465. |
 | low | AES-128 recorded | `config/app.yaml:5` | Move to AES-256 for anything with a secrecy horizon past 2035. |
 | medium | RSA in use | `config/app.yaml:5` | Plan a move to ML-KEM-768 for key establishment and ML-DSA-65 for signatures. |
@@ -95,13 +97,14 @@ The secrecy requirement outruns the horizon by 8.67 years, so traffic recorded t
 | high | Triple DES in use | `src/legacy.js:13` | Replace with AES-256-GCM. Disallowed by NIST SP 800 131A. |
 | high | ECB mode | `src/legacy.js:18` | Move to GCM. ECB leaks plaintext structure whatever the cipher. |
 | low | AES-128 recorded | `src/legacy.js:18` | Move to AES-256 for anything with a secrecy horizon past 2035. |
+| high | Non cryptographic randomness in a cryptographic context | `src/legacy.js:23` | Use crypto.randomBytes, secrets.token_bytes, or the platform CSPRNG. |
 | medium | Ed25519 or X25519 in use | `src/modern.js:4` | Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside. |
 
 ## Migration roadmap
 
 ### Priority actions
 
-1. **Remove 9 broken or weak primitives before anything else** SHA-1, MD5, 3DES, RC4, SSH configuration
+1. **Remove 10 broken or weak primitives before anything else** SHA-1, MD5, 3DES, DES, RC4
 2. **Rotate every key found in the tree and purge it from history** A key in a repository is a key in every clone, every fork and every backup.
 3. **Turn certificate verification back on** Disabled verification defeats the transport layer entirely, quantum computers not required.
 4. **Generate the CBOM in CI and fail the build on new quantum exposed dependencies** miftah scan . --cbom cbom.json --fail-on high
@@ -122,6 +125,7 @@ Remove cryptography that is already broken against a classical attacker. None of
 | SHA-1 | SHA-256 or SHA-384 | 77 | 4 | low |
 | MD5 | SHA-256 for integrity, Argon2id or scrypt for passwords | 75 | 2 | low |
 | 3DES | AES-256-GCM | 75 | 2 | low |
+| DES | AES-256-GCM | 74 | 1 | low |
 | RC4 | ChaCha20-Poly1305 or AES-256-GCM | 74 | 1 | low |
 | SSH configuration | rsa-sha2-512 and ssh-ed25519 host keys with sntrup761x25519-sha512 key exchange | 65 | 3 | low |
 | Embedded secret key material | a key management service, with the exposed value rotated | 48 | 1 | low |
@@ -178,19 +182,19 @@ Move certificates, code signing and firmware roots of trust to ML-DSA or a hash 
 
 ## Crypto agility
 
-Agility score: 38 / 100
+Agility score: 25 / 100
 
 | Status | Check | Advice |
 | --- | --- | --- |
-| in place | A cryptographic inventory exists and is current | 20 cryptographic assets identified |
+| in place | A cryptographic inventory exists and is current | 21 cryptographic assets identified |
 | needs a human | The inventory is machine readable and regenerated automatically | Confirm miftah runs in the pipeline, not only by hand |
-| missing | No broken primitive remains in the estate | 10 occurrences of broken primitives |
+| missing | No broken primitive remains in the estate | 11 occurrences of broken primitives |
 | missing | No key material is held in source or configuration | 1 occurrences of embedded key material |
-| missing | Algorithm choices are configuration, not literals | 22 percent of algorithm references sit in configuration, the rest are hard coded |
+| missing | Algorithm choices are configuration, not literals | 24 percent of algorithm references sit in configuration, the rest are hard coded |
 | partial | Symmetric keys are 256 bits where the data outlives 2035 | AES-128, SHA-256, PBKDF2 leave reduced margin |
 | partial | Key establishment uses a hybrid post quantum group | Hybrid present alongside classical only paths |
 | needs a human | Certificates carry SHA-256 or stronger and expire inside 398 days | No certificates inspected in this run |
-| in place | Randomness comes from a cryptographic source everywhere | None found |
+| missing | Randomness comes from a cryptographic source everywhere | 1 occurrences of weak randomness or static IVs |
 | missing | Transport refuses anything below TLS 1.2 | 1 occurrences permitting TLS 1.1 or below |
 | needs a human | A named owner is accountable for the migration | Name the owner and the review cadence |
 | needs a human | Suppliers have been asked for their post quantum timeline | Supply a vendor list with --vendors to track this |

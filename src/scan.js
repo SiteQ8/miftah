@@ -74,13 +74,25 @@ function redact(text) {
   return `${text.slice(0, 6)}...${text.slice(-4)} (${text.length} chars)`;
 }
 
-export function scanLine(line, rule) {
+// How far either side of a match to look for the context that qualifies it.
+// Two lines covers the declare then configure shape common to Java and C#
+// without letting an unrelated block leak in.
+export const CONTEXT_LINES = 2;
+
+export function scanLine(line, rule, context) {
   if (line.length > MAX_LINE) line = line.slice(0, MAX_LINE);
   const match = rule.pattern.exec(line);
   if (!match) return null;
-  if (rule.require && !rule.require.test(line)) return null;
+  const around = context === undefined ? line : context;
+  if (rule.require && !rule.require.test(around)) return null;
+  // Rejection stays on the matched line. A placeholder two lines away does not
+  // make this line safe.
   if (rule.reject && rule.reject.test(line)) return null;
   return match;
+}
+
+function windowAround(lines, index, radius = CONTEXT_LINES) {
+  return lines.slice(Math.max(0, index - radius), index + radius + 1).join('\n');
 }
 
 export function scanText(text, file, options = {}) {
@@ -92,10 +104,11 @@ export function scanText(text, file, options = {}) {
     const raw = lines[i];
     if (!raw || !raw.trim()) continue;
     const line = raw.length > MAX_LINE ? raw.slice(0, MAX_LINE) : raw;
+    const context = windowAround(lines, i);
 
     for (const rule of RULES) {
       rule.pattern.lastIndex = 0;
-      const match = scanLine(line, rule);
+      const match = scanLine(line, rule, context);
       if (!match) continue;
 
       let severity = rule.severity;
@@ -105,7 +118,7 @@ export function scanText(text, file, options = {}) {
       let bits = null;
 
       if (rule.sizeAware) {
-        bits = modulusOnLine(line);
+        bits = modulusOnLine(line) || modulusOnLine(context);
         if (bits) {
           const grade = gradeModulus(bits);
           severity = grade.severity;
@@ -114,7 +127,7 @@ export function scanText(text, file, options = {}) {
       }
 
       if (rule.iterationAware) {
-        const iterations = iterationsOnLine(line);
+        const iterations = iterationsOnLine(line) ?? iterationsOnLine(context);
         if (iterations === null) continue;
         if (iterations >= 600000) {
           severity = 'info';
