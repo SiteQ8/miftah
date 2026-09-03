@@ -21,6 +21,19 @@ function tok(source, flags = 'i') {
   return new RegExp(`(?<![A-Za-z0-9_])(?:${source})(?![A-Za-z0-9_])`, flags);
 }
 
+// A name distinctive enough to need no boundary at all. No ordinary identifier
+// contains "tripledes" or "md5" by accident, and demanding a trailing boundary
+// is exactly what made MD5CryptoServiceProvider and MCRYPT_3DES invisible.
+function anywhere(source, flags = 'i') {
+  return new RegExp(`(?:${source})`, flags);
+}
+
+// A short name that could sit inside an unrelated word, so the left edge is
+// guarded and the right is not. Catches SHA1Managed without reading src4 as rc4.
+function prefix(source, flags = 'i') {
+  return new RegExp(`(?<![A-Za-z0-9])(?:${source})`, flags);
+}
+
 const SECRET_REJECT = /(process\.env|os\.environ|getenv|System\.getenv|ENV\[|\$\{|\{\{|<[a-z_]+>|xxxx|changeme|placeholder|example|your[-_]?key|dummy|sample|redacted|FIXME|TODO|https?:\/\/|BEGIN [A-Z ]*PRIVATE KEY)/i;
 
 const PLACEHOLDER = /(process\.env|os\.environ|getenv|System\.getenv|ENV\[|\$\{|\{\{|<[a-z_]+>|xxxx|changeme|placeholder|example|your[-_]?key|dummy|sample|redacted|FIXME|TODO)/i;
@@ -31,7 +44,7 @@ export const RULES = [
     id: 'MFT-H001',
     title: 'MD5 in use',
     algorithm: 'MD5',
-    pattern: tok('md5|MD5Digest|md5_crypt|MessageDigest\\.getInstance\\("MD5"\\)'),
+    pattern: prefix('md5'),
     severity: 'high',
     classical: CLASSICAL.BROKEN,
     quantum: QUANTUM.BROKEN,
@@ -41,7 +54,7 @@ export const RULES = [
     id: 'MFT-H002',
     title: 'SHA-1 in use',
     algorithm: 'SHA-1',
-    pattern: tok('sha-?1|sha1sum|SHA1WithRSA|ecdsa-with-SHA1|hmac-sha1'),
+    pattern: prefix('sha-?1(?![0-9])'),
     severity: 'high',
     classical: CLASSICAL.BROKEN,
     quantum: QUANTUM.BROKEN,
@@ -83,7 +96,7 @@ export const RULES = [
     id: 'MFT-C001',
     title: 'Triple DES in use',
     algorithm: '3DES',
-    pattern: tok('3des|triple-?des|des-?ede3?|des-cbc3|DESede|TDEA'),
+    pattern: anywhere('3des(?!ign)|triple-?des(?!ign)|des-?ede3?|des-cbc3|tdea|NewTripleDESCipher'),
     severity: 'high',
     classical: CLASSICAL.BROKEN,
     quantum: QUANTUM.BROKEN,
@@ -93,7 +106,7 @@ export const RULES = [
     id: 'MFT-C002',
     title: 'Single DES in use',
     algorithm: 'DES',
-    pattern: tok('des-cbc|des-ecb|DES/CBC|DES/ECB|Cipher\\.getInstance\\("DES"\\)'),
+    pattern: /(?:des-cbc|des-ecb|DES\/(?:CBC|ECB)|crypto\/des|\bdes\.New(?!TripleDES)|DESKeySpec|(?<!Triple)DESCryptoServiceProvider|kCCAlgorithmDES(?!3)|MCRYPT_DES(?!EDE)|["']DES["'])/i,
     severity: 'critical',
     classical: CLASSICAL.BROKEN,
     quantum: QUANTUM.BROKEN,
@@ -103,7 +116,7 @@ export const RULES = [
     id: 'MFT-C003',
     title: 'RC4 in use',
     algorithm: 'RC4',
-    pattern: tok('rc4|arcfour|ARCFOUR128|ARCFOUR256'),
+    pattern: prefix('rc4|arcfour'),
     severity: 'critical',
     classical: CLASSICAL.BROKEN,
     quantum: QUANTUM.BROKEN,
@@ -136,7 +149,7 @@ export const RULES = [
     mode: 'ECB',
     assetLabel: 'ECB mode',
     assetPrimitive: 'block-cipher',
-    pattern: /(?<![A-Za-z0-9_])(?:ECB|MODE_ECB|aes-\d{3}-ecb|AES\/ECB|"ECB")(?![A-Za-z0-9_])/,
+    pattern: /(?:(?<![A-Za-z0-9])ECB(?![A-Za-z0-9])|MODE_ECB|aes-\d{3}-ecb|AES\/ECB|kCCOptionECBMode)/,
     severity: 'high',
     classical: CLASSICAL.BROKEN,
     quantum: QUANTUM.UNKNOWN,
@@ -344,7 +357,7 @@ export const RULES = [
     id: 'MFT-K004',
     title: 'Non cryptographic randomness in a cryptographic context',
     algorithm: null,
-    pattern: /(?:Math\.random\s*\(\)|random\.random\s*\(\)|random\.randint|mt_rand\s*\(|(?<![A-Za-z0-9_])rand\s*\(\s*\))/,
+    pattern: /(?:Math\.random\s*\(\)|random\.random\s*\(\)|random\.randint|mt_rand\s*\(|new\s+Random\s*\(|math\/rand|rand\.(?:Int|Intn|Float64|Read)\b|(?<![A-Za-z0-9_])rand\s*\(\s*\))/,
     require: /(key|token|iv|nonce|salt|secret|password|session|otp|csrf|uuid)/i,
     severity: 'high',
     classical: CLASSICAL.BROKEN,
@@ -373,6 +386,52 @@ export const RULES = [
     advice: 'No action. Memory hard derivation is the right choice for passwords.'
   },
 
+  // ----- library and platform level findings ----------------------------
+
+  {
+    id: 'MFT-L001',
+    title: 'mcrypt in use',
+    algorithm: null,
+    assetLabel: 'mcrypt library',
+    assetPrimitive: 'unknown',
+    pattern: /\bmcrypt_(?:encrypt|decrypt|module_open|generic|create_iv|list_algorithms)\b/i,
+    severity: 'high',
+    classical: CLASSICAL.LEGACY,
+    quantum: QUANTUM.UNKNOWN,
+    advice: 'mcrypt was deprecated in PHP 7.1 and removed in 7.2. It defaults to zero padding and ECB. Move to openssl_encrypt or libsodium.'
+  },
+  {
+    id: 'MFT-L002',
+    title: 'Legacy .NET crypto service provider',
+    algorithm: null,
+    assetLabel: 'Legacy .NET provider',
+    assetPrimitive: 'unknown',
+    pattern: /\b(?:RijndaelManaged|RNGCryptoServiceProvider|SHA1Managed|MD5CryptoServiceProvider|SHA1CryptoServiceProvider)\b/,
+    severity: 'medium',
+    classical: CLASSICAL.LEGACY,
+    quantum: QUANTUM.UNKNOWN,
+    advice: 'These types are obsolete in modern .NET. Use Aes.Create, SHA256.Create and RandomNumberGenerator.'
+  },
+  {
+    id: 'MFT-L003',
+    title: 'Certificate validation callback always succeeds',
+    algorithm: null,
+    pattern: /(?:ServerCertificateValidationCallback\s*(?:\+?=)|ServerCertificateCustomValidationCallback\s*=)[^;\n]*(?:=>\s*true|return\s+true)/,
+    severity: 'critical',
+    classical: CLASSICAL.BROKEN,
+    quantum: QUANTUM.UNKNOWN,
+    advice: 'A callback that returns true accepts every certificate, including one an attacker minted. Validate the chain or pin the expected certificate.'
+  },
+  {
+    id: 'MFT-L004',
+    title: 'Trust manager accepts every certificate',
+    algorithm: null,
+    pattern: /(?:TrustAll|NoopHostnameVerifier|ALLOW_ALL_HOSTNAME_VERIFIER|X509TrustManager\s*\(\s*\)\s*\{[^}]*checkServerTrusted[^}]*\{\s*\}|checkServerTrusted\s*\([^)]*\)\s*(?:throws[^{]*)?\{\s*\})/,
+    severity: 'critical',
+    classical: CLASSICAL.BROKEN,
+    quantum: QUANTUM.UNKNOWN,
+    advice: 'An empty checkServerTrusted trusts anyone who answers. Remove it and let the default trust manager do its job.'
+  },
   // ----- transport ------------------------------------------------------
   {
     id: 'MFT-T001',
@@ -380,7 +439,7 @@ export const RULES = [
     algorithm: null,
     protocol: 'tls',
     assetLabel: 'TLS configuration',
-    pattern: /(?:TLSv1(?:[._]?[01])?(?![._]?[23])|SSLv[23]|PROTOCOL_TLSv1(?:_1)?(?![._]?[23])|SecurityProtocolType\.(?:Ssl3|Tls|Tls11)(?![A-Za-z0-9_])|ssl_protocols[^;\n]*TLSv1(?:\.1)?(?!\.[23]))/,
+    pattern: /(?:TLSv1(?:[._]?[01])?(?![._]?[23])|SSLv[23]|PROTOCOL_TLSv1(?:_1)?(?![._]?[23])|SecurityProtocolType\.(?:Ssl3|Tls|Tls11)(?![A-Za-z0-9_])|VersionTLS1[01](?![0-9])|VersionSSL30|ssl_protocols[^;\n]*TLSv1(?:\.1)?(?!\.[23]))/,
     severity: 'high',
     classical: CLASSICAL.BROKEN,
     quantum: QUANTUM.UNKNOWN,

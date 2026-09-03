@@ -1,7 +1,7 @@
 {
   "target": "/home/claude/miftah/examples/sample-estate",
-  "startedAt": "2026-09-03T09:56:58.946Z",
-  "durationMs": 39,
+  "startedAt": "2026-09-03T10:30:08.781Z",
+  "durationMs": 19,
   "filesFound": 7,
   "filesScanned": 7,
   "filesSkipped": 0,
@@ -59,6 +59,26 @@
       "classical": "broken",
       "quantum": "broken",
       "advice": "Replace with AES-256-GCM. Disallowed by NIST SP 800 131A.",
+      "file": "config/app.yaml",
+      "line": 5,
+      "column": 36,
+      "bits": null,
+      "detail": "",
+      "evidence": "ciphers: \"ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:RC4-MD5\""
+    },
+    {
+      "rule": "MFT-C002",
+      "title": "Single DES in use",
+      "severity": "critical",
+      "algorithm": "DES",
+      "mode": null,
+      "protocol": null,
+      "materialType": null,
+      "assetLabel": null,
+      "assetPrimitive": null,
+      "classical": "broken",
+      "quantum": "broken",
+      "advice": "Replace with AES-256-GCM. A 56 bit key falls in hours.",
       "file": "config/app.yaml",
       "line": 5,
       "column": 36,
@@ -421,7 +441,7 @@
       "advice": "Replace with SHA-256, or SHA-384 where the artefact must outlive 2035.",
       "file": "config/sshd_config",
       "line": 6,
-      "column": 6,
+      "column": 11,
       "bits": null,
       "detail": "",
       "evidence": "MACs hmac-sha1,hmac-sha2-256"
@@ -787,6 +807,26 @@
       "evidence": "const cipher = crypto.createCipheriv('aes-128-ecb', key, null);"
     },
     {
+      "rule": "MFT-K004",
+      "title": "Non cryptographic randomness in a cryptographic context",
+      "severity": "high",
+      "algorithm": null,
+      "mode": null,
+      "protocol": null,
+      "materialType": null,
+      "assetLabel": null,
+      "assetPrimitive": null,
+      "classical": "broken",
+      "quantum": "unknown",
+      "advice": "Use crypto.randomBytes, secrets.token_bytes, or the platform CSPRNG.",
+      "file": "src/legacy.js",
+      "line": 23,
+      "column": 10,
+      "bits": null,
+      "detail": "",
+      "evidence": "return Math.random().toString(36).slice(2);"
+    },
+    {
       "rule": "MFT-A006",
       "title": "Ed25519 or X25519 in use",
       "severity": "medium",
@@ -908,6 +948,34 @@
     }
   ],
   "assets": [
+    {
+      "id": "DES",
+      "name": "DES",
+      "algorithm": "DES",
+      "mode": null,
+      "protocol": null,
+      "materialType": null,
+      "primitive": "block-cipher",
+      "classical": "broken",
+      "quantum": "broken",
+      "nistLevel": 0,
+      "oid": "1.3.14.3.2.7",
+      "replacement": "AES-256-GCM",
+      "note": "56 bit key. Brute forced in hours on commodity hardware.",
+      "bits": null,
+      "functions": [
+        "encrypt",
+        "decrypt"
+      ],
+      "severity": "critical",
+      "occurrences": [
+        {
+          "file": "config/app.yaml",
+          "line": 5,
+          "rule": "MFT-C002"
+        }
+      ]
+    },
     {
       "id": "RC4",
       "name": "RC4",

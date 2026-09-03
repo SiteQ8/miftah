@@ -10,6 +10,7 @@ import { THEME, SANS, MONO } from '../src/theme.js';
 import { buildConsole } from '../src/console.js';
 import { assemble, toHtml, toMarkdown } from '../src/report.js';
 import { buildCbom } from '../src/cbom.js';
+import { RULES } from '../src/rules.js';
 import { VERSION } from '../src/index.js';
 
 const ROOT = path.join(import.meta.dirname, '..');
@@ -268,7 +269,8 @@ const page = `<!doctype html>
 <section>
   <h2>What it looks at</h2>
   <h3>Code and configuration</h3>
-  <p>Thirty rules covering broken hashes, legacy ciphers, ECB mode, undersized RSA and DH, static initialisation vectors, embedded keys, weak randomness in a cryptographic context, low PBKDF2 iteration counts, deprecated TLS and disabled certificate verification. Post quantum algorithms are detected too, so the inventory records what is already right rather than only what is wrong.</p>
+  <p>${RULES.length} rules covering broken hashes, legacy ciphers, ECB mode, undersized RSA and DH, static initialisation vectors, embedded keys, weak randomness in a cryptographic context, low PBKDF2 iteration counts, deprecated TLS and disabled certificate verification. Post quantum algorithms are detected too, so the inventory records what is already right rather than only what is wrong.</p>
+  <p>Read in their own idioms: JavaScript, TypeScript, Python, <strong>Java</strong>, <strong>C#</strong>, <strong>Go</strong>, <strong>PHP</strong>, <strong>Ruby</strong>, <strong>Swift</strong>, Rust, Kotlin, shell and the usual configuration formats. <code>TripleDESCryptoServiceProvider</code>, <code>Cipher.getInstance("DESede/CBC/PKCS5Padding")</code>, <code>MCRYPT_3DES</code> and <code>kCCAlgorithm3DES</code> are the same asset, and all four are found. A scanner that reads nothing is worse than no scanner, because a clean report retires the question.</p>
   <h3>Certificates</h3>
   <p>Signature algorithm read straight out of the DER, public key type, size and curve, and expiry. Graded on all three, worst one wins.</p>
   <h3>The wire</h3>
