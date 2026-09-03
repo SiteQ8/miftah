@@ -23,6 +23,7 @@ import {
 import { buildSarif, validateSarif } from '../src/sarif.js';
 import { readVendors } from '../src/deps.js';
 import { diffScans, summariseDiff } from '../src/diff.js';
+import { loadConfig, resolveProfile, describeProfile } from '../src/config.js';
 
 const COLOUR = process.stdout.isTTY && !process.env.NO_COLOR;
 const paint = (code, text) => (COLOUR ? `\u001b[${code}m${text}\u001b[0m` : text);
@@ -73,9 +74,11 @@ Options
   --baseline <file>    Only fail on findings absent from this baseline
   --sarif <file>       Write SARIF 2.1.0 for code scanning
   --vendors <file>     A supplier list, so bought cryptography is tracked too
+  --max-files <n>      Raise the twenty thousand file walk limit
   --exclude <dir>      Skip a directory, repeatable
   --strict             Do not downgrade findings in tests, fixtures or lists
   --no-ignore-file     Ignore .miftahignore
+  --no-config          Ignore .miftahrc.json
   --lockfiles          Scan dependency lockfiles as well
   --quiet              Suppress the console summary
   --version            Print the version
@@ -101,7 +104,7 @@ function parseArgs(argv) {
     }
     const name = arg.slice(2);
     const takesValue = ![
-      'quiet', 'help', 'version', 'no-color', 'validate', 'redact', 'strict', 'lockfiles', 'prune', 'no-ignore-file'
+      'quiet', 'help', 'version', 'no-color', 'validate', 'redact', 'strict', 'lockfiles', 'prune', 'no-ignore-file', 'no-config'
     ].includes(name);
     if (!takesValue) {
       options[name] = true;
@@ -119,13 +122,45 @@ function parseArgs(argv) {
   return options;
 }
 
-function profileFrom(options) {
-  return {
-    shelfLife: options['shelf-life'] !== undefined ? Number(options['shelf-life']) : DEFAULT_PROFILE.shelfLife,
-    migrationYears: options.migration !== undefined ? Number(options.migration) : DEFAULT_PROFILE.migrationYears,
-    crqcYear: options.horizon !== undefined ? Number(options.horizon) : DEFAULT_PROFILE.crqcYear,
-    exposure: options.exposure || DEFAULT_PROFILE.exposure
+// Defaults, then the committed file, then the command line. A flag typed today
+// should win over a file written last year, and the origin of every value is
+// kept so the summary can say where the assumptions came from.
+function resolveFrom(options) {
+  const flags = {
+    shelfLife: options['shelf-life'] !== undefined ? Number(options['shelf-life']) : undefined,
+    migrationYears: options.migration !== undefined ? Number(options.migration) : undefined,
+    crqcYear: options.horizon !== undefined ? Number(options.horizon) : undefined,
+    exposure: options.exposure || undefined
   };
+  return resolveProfile(DEFAULT_PROFILE, options.config, flags);
+}
+
+function profileFrom(options) {
+  return resolveFrom(options).profile;
+}
+
+function readConfig(target, options) {
+  if (options['no-config']) return null;
+  const root = fs.existsSync(target) && fs.statSync(target).isDirectory() ? target : path.dirname(target);
+  let config;
+  try {
+    config = loadConfig(root);
+  } catch (error) {
+    // A file that will not parse is not something to shrug at. Falling back to
+    // defaults silently would score the estate against assumptions nobody chose.
+    throw new Error(`${error.message}\nRemove it or fix it. Use --no-config to ignore it deliberately.`);
+  }
+  if (!config) return null;
+  for (const problem of config.errors) {
+    process.stderr.write(`${amber('config:')} ${problem}\n`);
+  }
+  if (!options['fail-on'] && config.failOn) options['fail-on'] = config.failOn;
+  if (!options.vendors && config.vendors) options.vendors = config.vendors;
+  if (!options.baseline && config.baseline) options.baseline = config.baseline;
+  if (config.strict) options.strict = true;
+  if (config.lockfiles) options.lockfiles = true;
+  if (config.maxFiles && !options['max-files']) options['max-files'] = config.maxFiles;
+  return config;
 }
 
 function write(file, contents) {
@@ -159,6 +194,13 @@ function printSummary(scan, profile) {
   process.stdout.write(`${dim('-'.repeat(64))}\n`);
   if (scan.filesScanned !== undefined) {
     process.stdout.write(`  Files read           ${scan.filesScanned}\n`);
+  if (scan.truncated) {
+    const reasons = [];
+    if (scan.limits?.fileLimit) reasons.push(`the ${scan.limits.fileLimit} file limit was reached`);
+    if (scan.limits?.depthLimit) reasons.push(`${scan.limits.directoriesNotEntered} directories were deeper than ${scan.limits.depthLimit}`);
+    process.stdout.write(`  ${red('INCOMPLETE')}           ${reasons.join(' and ')}\n`);
+    process.stdout.write(`  ${dim('Raise it with --max-files, or scan subtrees separately. This report is partial.')}\n`);
+  }
   }
   process.stdout.write(`  Cryptographic assets ${estate.counts.assets}\n`);
   const deps = scan.dependencies || [];
@@ -181,6 +223,9 @@ function printSummary(scan, profile) {
   process.stdout.write(`  Quantum    ${red(`broken ${estate.counts.quantumBroken}`)}  ${amber(`weakened ${estate.counts.quantumWeakened}`)}  ${green(`resistant ${estate.counts.quantumResistant}`)}\n`);
   process.stdout.write(`${dim('-'.repeat(64))}\n`);
   process.stdout.write(`  ${bold('Mosca')}  shelf life ${mosca.shelfLife}y + migration ${mosca.migrationYears}y vs horizon ${mosca.yearsToHorizon}y\n`);
+  // Say where the assumptions came from, because a number scored against
+  // settings nobody can see is a number nobody can argue with.
+  if (scan.profileOrigin) process.stdout.write(`  ${dim(scan.profileOrigin)}\n`);
   process.stdout.write(
     mosca.breached
       ? `  ${red(`Exposed by ${mosca.deficit} years.`)} Traffic recorded today is readable before the data stops mattering.\n`
@@ -215,14 +260,20 @@ async function commandScan(options) {
   const target = options._[1] || '.';
   if (!fs.existsSync(target)) throw new Error(`No such path: ${target}`);
 
+  options.config = readConfig(target, options);
+
   const scan = scanTree(target, {
-    exclude: options.exclude,
+    exclude: [...options.exclude, ...(options.config?.exclude || [])],
     redactEvidence: options.redact !== false,
     strict: options.strict === true,
+    maxFiles: options['max-files'] ? Number(options['max-files']) : undefined,
     lockfiles: options.lockfiles === true,
     ignoreFile: options['no-ignore-file'] !== true
   });
   scan.version = VERSION;
+  const resolved = resolveFrom(options);
+  scan.profile = resolved.profile;
+  scan.profileOrigin = describeProfile(resolved);
 
   if (options.vendors && options.vendors !== true) {
     if (!fs.existsSync(options.vendors)) throw new Error(`No vendor list at ${options.vendors}`);
@@ -329,6 +380,7 @@ async function commandBaseline(options) {
     exclude: options.exclude,
     redactEvidence: options.redact !== false,
     strict: options.strict === true,
+    maxFiles: options['max-files'] ? Number(options['max-files']) : undefined,
     lockfiles: options.lockfiles === true,
     ignoreFile: options['no-ignore-file'] !== true
   });
