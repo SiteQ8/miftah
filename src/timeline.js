@@ -112,7 +112,7 @@ export function horizonStrip(mosca, options = {}) {
 
   const parts = [];
   parts.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${escapeText(labels.horizon)} ${horizonYear}">`
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" role="img" preserveAspectRatio="xMidYMid meet" aria-label="${escapeText(labels.horizon)} ${horizonYear}">`
   );
 
   const text = (value, tx, ty, size, fill, anchor, weight) =>
@@ -199,7 +199,7 @@ export function compositionBar(counts, options = {}) {
   const total = segments.reduce((sum, segment) => sum + segment.value, 0) || 1;
   const barH = 34;
   const parts = [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="estate composition">`
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" role="img" preserveAspectRatio="xMidYMid meet" aria-label="estate composition">`
   ];
 
   let cursor = 0;

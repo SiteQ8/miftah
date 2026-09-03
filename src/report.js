@@ -190,11 +190,17 @@ function chipText(background) {
 }
 
 function chip(label, background) {
-  return `<span class="chip" style="background:${background};color:${chipText(background)}">${escapeHtml(label)}</span>`;
+  return `<span class="chip" style="--chip-dot:${background}">${escapeHtml(label)}</span>`;
+}
+
+// Severity stays solid, because in the findings table it is the thing being
+// sorted on and a dot is too quiet to scan.
+function solidChip(label, background) {
+  return `<span class="chip solid" style="background:${background};color:${chipText(background)}">${escapeHtml(label)}</span>`;
 }
 
 function severityChip(label, severity) {
-  return chip(label, severityColour(severity));
+  return solidChip(label, severityColour(severity));
 }
 
 // A quantum verdict is not a severity. Routing one through the other made
@@ -203,15 +209,27 @@ function quantumChip(label, verdict) {
   return chip(label, quantumColour(verdict));
 }
 
-function table(headers, rows, align = []) {
+function table(headers, rows, align = [], cols = []) {
+  const group = cols.length
+    ? `<colgroup>${cols.map((c) => `<col class="${c}">`).join('')}</colgroup>`
+    : '';
   const head = headers.map((h, i) => `<th${align[i] === 'right' ? ' class="num"' : ''}>${escapeHtml(h)}</th>`).join('');
   const body = rows
     .map((row) => `<tr>${row.map((cell, i) => `<td${align[i] === 'right' ? ' class="num"' : ''}>${cell}</td>`).join('')}</tr>`)
     .join('\n');
-  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  return `<table>${group}<thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
 }
 
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+
+// A bar that is always the same colour tells you only the length. This tells you
+// the band at a glance.
+function riskColour(score) {
+  if (score >= 75) return THEME.alarm;
+  if (score >= 55) return THEME.alarmDeep;
+  if (score >= 30) return THEME.signal;
+  return THEME.steel;
+}
 
 export function toHtml(model, locale = 'en') {
   const L = (key, vars) => t(locale, key, vars);
@@ -249,7 +267,7 @@ export function toHtml(model, locale = 'en') {
       escapeHtml(asset.primitive),
       escapeHtml(L(`classical.${asset.classical}`)),
       quantumChip(L(`quantum.${asset.quantum}`), asset.quantum),
-      `<span class="score" style="background-image:linear-gradient(to ${dir === 'rtl' ? 'left' : 'right'}, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) ${score.score}%, transparent ${score.score}%)">${score.score}</span>`,
+      `<span class="risk"><span class="risk-track"><span class="risk-fill" style="width:${score.score}%;background:${riskColour(score.score)}"></span></span><span class="risk-value">${score.score}</span></span>`,
       String(asset.occurrences.length),
       escapeHtml(asset.replacement || '')
     ];
@@ -377,21 +395,28 @@ ${styles(dir)}
           escapeHtml((dep.provides || []).join(', ')),
           quantumChip(L(`quantum.${dep.quantum}`), dep.quantum),
           escapeHtml(dep.advice)
-        ])
+        ]),
+      [],
+      ['c-lib', 'c-eco', 'c-ver', 'c-prov', 'c-q', 'c-adv']
     )}
   </section>` : ''}
 
   <section id="inventory">
     <h2>${escapeHtml(L('sectionInventory'))}</h2>
     ${inventoryRows.length
-      ? table([L('colAsset'), L('colPrimitive'), L('colClassical'), L('colQuantum'), L('colRisk'), L('colUses'), L('colTarget')], inventoryRows, ['', '', '', '', 'right', 'right', ''])
+      ? table(
+        [L('colAsset'), L('colPrimitive'), L('colClassical'), L('colQuantum'), L('colRisk'), L('colUses'), L('colTarget')],
+        inventoryRows,
+        ['', '', '', '', '', 'right', ''],
+        ['c-asset', 'c-primitive', 'c-classical', 'c-quantum', 'c-risk', 'c-uses', 'c-target']
+      )
       : `<p class="empty">${escapeHtml(L('noFindings'))}</p>`}
   </section>
 
   <section id="findings">
     <h2>${escapeHtml(L('sectionFindings'))}</h2>
     ${findingRows.length
-      ? table([L('colSeverity'), L('colFinding'), L('colLocation'), L('colAdvice')], findingRows)
+      ? table([L('colSeverity'), L('colFinding'), L('colLocation'), L('colAdvice')], findingRows, [], ['c-sev', 'c-what', 'c-where', 'c-adv'])
       : `<p class="empty">${escapeHtml(L('noFindings'))}</p>`}
   </section>
 
@@ -525,10 +550,28 @@ h2 { font-size: 22px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em
 h3 { font-size: 17px; font-weight: 600; margin: 26px 0 6px; }
 p { margin: 0 0 14px; max-width: 74ch; }
 figure { margin: 20px 0; }
-figure svg { display: block; width: 100%; height: auto; }
+figure svg { display: block; width: 100%; height: auto; max-width: 920px; }
 
-table { width: 100%; border-collapse: collapse; margin: 14px 0; }
-th, td { overflow-wrap: anywhere; word-break: break-word; }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; table-layout: fixed; }
+#inventory col.c-asset { width: 27%; }
+#inventory col.c-primitive { width: 10%; }
+#inventory col.c-classical { width: 9%; }
+#inventory col.c-quantum { width: 13%; }
+#inventory col.c-risk { width: 11%; }
+#inventory col.c-uses { width: 9%; }
+#inventory col.c-target { width: 21%; }
+#dependencies col.c-lib { width: 18%; }
+#dependencies col.c-eco { width: 8%; }
+#dependencies col.c-ver { width: 10%; }
+#dependencies col.c-prov { width: 16%; }
+#dependencies col.c-q { width: 12%; }
+#dependencies col.c-adv { width: 36%; }
+#findings col.c-sev { width: 9%; }
+#findings col.c-what { width: 26%; }
+#findings col.c-where { width: 22%; }
+#findings col.c-adv { width: 43%; }
+th, td { overflow-wrap: break-word; }
+td .mono, td code { overflow-wrap: anywhere; }
 th { text-align: ${start}; font-size: 12px; font-weight: 600; color: var(--slate); padding: 0 14px 10px 0; border-bottom: 1px solid var(--paper-line); }
 td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--paper-line); vertical-align: top; }
 td.right, th.right { text-align: ${end}; }
@@ -540,8 +583,14 @@ tbody tr:hover { background: var(--paper-raised); }
 code, .mono { direction: ltr; unicode-bidi: isolate; display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
 code { color: var(--slate); }
 
-.chip { display: inline-block; padding: 3px 9px; font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; }
-.score { display: inline-block; width: 66px; padding: 3px 8px; text-align: ${end}; background-color: rgba(255,90,60,0.08); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 0; font-size: 12.5px; font-weight: 500; color: var(--ink); background: none !important; white-space: normal; }
+.chip::before { content: ''; display: inline-block; flex: 0 0 auto; width: 8px; height: 8px; margin-${end}: 7px; border-radius: 50%; background: var(--chip-dot); }
+.risk { white-space: nowrap; }
+.risk-track { display: inline-block; vertical-align: middle; width: 58px; height: 6px; background: var(--paper-line); overflow: hidden; }
+.risk-fill { display: block; height: 6px; }
+.risk-value { display: inline-block; vertical-align: middle; margin-${start}: 8px; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--slate); }
+.chip.solid { padding: 3px 9px; color: #fff; font-weight: 600; white-space: nowrap; }
+.chip.solid::before { display: none; }
 
 .wave { margin-bottom: 30px; }
 .wave-window { font-size: 13px; font-weight: 400; color: var(--slate); margin-${start}: 10px; }
