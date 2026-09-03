@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { VERSION } from '../src/version.js';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 
@@ -86,7 +87,7 @@ test('the sample estate scores as an unprepared one', () => {
 // -------------------------------------------------------------------- cbom
 
 test('the CBOM is well formed CycloneDX 1.6', () => {
-  const bom = buildCbom(scan, { version: '0.1.0' });
+  const bom = buildCbom(scan, { version: VERSION });
   assert.equal(bom.bomFormat, 'CycloneDX');
   assert.equal(bom.specVersion, SPEC_VERSION);
   assert.match(bom.serialNumber, /^urn:uuid:/);

@@ -6,9 +6,10 @@
 import net from 'node:net';
 import { parseEndpoint } from './tls.js';
 import { CLASSICAL, QUANTUM } from './catalog.js';
+import { VERSION } from './version.js';
 
 const SSH_MSG_KEXINIT = 20;
-const CLIENT_ID = 'SSH-2.0-Miftah_0.1.0';
+const CLIENT_ID = `SSH-2.0-Miftah_${VERSION}`;
 
 const WEAK_KEX = [
   'diffie-hellman-group1-sha1',
