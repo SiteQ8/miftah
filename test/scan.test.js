@@ -193,10 +193,10 @@ test('excluded directories are never entered', () => {
 // actually appear in source, so they are pinned here.
 test('embedded secrets are caught across the spellings people really use', () => {
   const caught = [
-    'const API_SECRET = "NOT_A_REAL_TOKEN_0000000000000000";',
+    'const API_SECRET = "Zx9Kq2Lm4Np7Rt5Vw8Yb1Dc3Fg6Hj0Ks";',
     'JWT_SECRET="hunter2hunter2hunter2hunter2"',
     'db_password: "S3cur3P@ssw0rdLong123"',
-    'const stripeApiKey = "NOT_A_REAL_TOKEN_1111111111";',
+    'const stripeApiKey = "Qw4Er7Ty2Ui9Op5As8Df3Gh6";',
     'const MASTER_KEY = "0123456789abcdef0123456789abcdef";',
     'signing_key = "aB3!kQ9#zX2$mN7&pL4%"',
     'ENCRYPTION_KEY = "aVeryLongEncryptionKeyValue123"'
@@ -225,7 +225,7 @@ test('things that merely look like secrets are left alone', () => {
 });
 
 test('a caught secret is never echoed back in full', () => {
-  const secret = 'NOT_A_REAL_TOKEN_0000000000000000';
+  const secret = 'Zx9Kq2Lm4Np7Rt5Vw8Yb1Dc3Fg6Hj0Ks';
   const [finding] = scanText(`const API_SECRET = "${secret}";`, 'a.js').filter((f) => f.rule === 'MFT-K001');
   assert.ok(finding);
   assert.ok(!finding.evidence.includes(secret), 'the secret survived into the evidence');

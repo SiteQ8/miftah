@@ -79,6 +79,130 @@ function redact(text) {
 // without letting an unrelated block leak in.
 export const CONTEXT_LINES = 2;
 
+
+const TEST_PATH = /(?:^|[\\/])(?:tests?|spec|specs|__tests__|testdata|fixtures?|mocks?|benchmarks?)[\\/]|(?:^|[\\/])(?:test_[^\\/]*|[^\\/]*_test|[^\\/]*\\.(?:test|spec))\\.[A-Za-z0-9]+$/i;
+
+// Files that announce they are deliberately wrong.
+const FIXTURE_NAME = /(?:vulnerable|insecure|unsafe|weak|bad|broken|deliberately|honeypot|dummy)[-_.]/i;
+
+// Generated dependency lockfiles. A package-lock.json carries a sha512 integrity
+// hash per package, which produced 1474 findings on one repository and buried
+// everything that mattered.
+const LOCKFILES = new Set([
+  'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'npm-shrinkwrap.json',
+  'composer.lock', 'Gemfile.lock', 'poetry.lock', 'Pipfile.lock',
+  'Cargo.lock', 'go.sum', 'gradle.lockfile', 'pubspec.lock'
+]);
+
+export function isLockfile(file) {
+  return LOCKFILES.has(path.basename(file));
+}
+
+export function classifyPath(file) {
+  const name = path.basename(file);
+  if (FIXTURE_NAME.test(name)) return 'fixture';
+  if (TEST_PATH.test(file.replace(/\\/g, '/'))) return 'test';
+  return null;
+}
+
+// Real code uses one algorithm per line. Naming three or more in a short block
+// is a list about cryptography rather than a use of it, which is what a
+// denylist, a protocol table and a grading rubric all look like.
+const CATALOGUE_MIN = 3;
+
+const CONFIG_EXT = new Set([
+  '.yaml', '.yml', '.conf', '.cnf', '.cfg', '.ini', '.properties',
+  '.toml', '.env', '.tf', '.tfvars'
+]);
+
+function isConfig(file) {
+  const name = path.basename(file);
+  return CONFIG_EXT.has(path.extname(file).toLowerCase()) || SCANNABLE_NAMES.has(name);
+}
+
+// An OpenSSL cipher string names many suites inside one quoted value. That is a
+// directive being set, never a catalogue.
+const CIPHER_STRING = /["'][A-Za-z0-9!+@-]+(?::[A-Za-z0-9!+@-]+){2,}["']/;
+const CATALOGUE_SPAN = 2;
+
+// Text that talks about an algorithm instead of calling it. Remediation advice
+// is the common case: "Remove RC4, 3DES, export and null ciphers".
+const DISCUSSING = /\b(?:remove|removed|disable|disabled|avoid|prefer|deprecat\w*|forbid\w*|reject\w*|block(?:ed|s)?|insecure|unsupported|legacy|obsolete|no longer|should not|must not|do not|don't|weak(?:er|est)?)\b/i;
+
+// A regex naming several key types is a detector, not a use of them.
+const REGEX_LITERAL = /\(\?[:=!<]|\\[dwsbA-Z]|\[\^?[A-Za-z0-9]-[A-Za-z0-9]\]/;
+
+// Prose about the system rather than the system.
+const DOC_EXT = new Set(['.md', '.markdown', '.txt', '.rst', '.adoc']);
+
+// Secret material stays at full severity even in prose, because a key pasted
+// into a README is a leaked key and not a description of one.
+function namesAlgorithmOnly(finding) {
+  return !finding.materialType;
+}
+
+// A line that is nothing but quoted strings and punctuation, which is how a
+// table entry looks and never how a call looks.
+const BARE_LITERALS = /^[\s([{]*(?:["'][^"']*["']\s*[,:]?\s*)+[)\]},;]*$/;
+
+function markCatalogueLines(findings, lines = []) {
+  // Distinct algorithms named per line, so a block can be summed.
+  const perLine = new Map();
+  for (const finding of findings) {
+    const name = finding.algorithm || finding.mode || finding.protocol;
+    if (!name) continue;
+    const key = `${finding.file}:${finding.line}`;
+    if (!perLine.has(key)) perLine.set(key, new Set());
+    perLine.get(key).add(name);
+  }
+
+  for (const finding of findings) {
+    if (finding.context) continue;
+    const names = new Set();
+    for (let offset = -CATALOGUE_SPAN; offset <= CATALOGUE_SPAN; offset += 1) {
+      for (const name of perLine.get(`${finding.file}:${finding.line + offset}`) || []) {
+        names.add(name);
+      }
+    }
+    const source = lines[finding.line - 1] || '';
+    if (isConfig(finding.file) || CIPHER_STRING.test(source)) continue;
+
+    if (DOC_EXT.has(path.extname(finding.file).toLowerCase()) && namesAlgorithmOnly(finding)) {
+      finding.context = 'documentation';
+      continue;
+    }
+
+    if (names.size >= CATALOGUE_MIN || DISCUSSING.test(source) || BARE_LITERALS.test(source)
+        || (REGEX_LITERAL.test(source) && namesAlgorithmOnly(finding))) {
+      finding.context = 'catalogue';
+    }
+  }
+  return findings;
+}
+
+const DOWNGRADE = { critical: 'low', high: 'low', medium: 'info', low: 'info', info: 'info' };
+
+const CONTEXT_NOTE = {
+  test: 'Found in test code, so it may be an assertion rather than a use.',
+  fixture: 'Found in a file that names itself as deliberately insecure.',
+  catalogue: 'The line names several algorithms at once, so it reads as a list about cryptography rather than a use of it.',
+  documentation: 'Found in prose rather than in code. Key material would still be reported in full.'
+};
+
+// Severity is reduced rather than removed. A real key committed to a test
+// fixture is still a real key.
+export function applyContext(findings, options = {}, lines = []) {
+  markCatalogueLines(findings, lines);
+  for (const finding of findings) {
+    if (!finding.context) continue;
+    if (options.strict) continue;
+    finding.originalSeverity = finding.severity;
+    finding.severity = DOWNGRADE[finding.severity] || 'info';
+    finding.contextNote = CONTEXT_NOTE[finding.context];
+  }
+  return findings;
+}
+
 export function scanLine(line, rule, context) {
   if (line.length > MAX_LINE) line = line.slice(0, MAX_LINE);
   const match = rule.pattern.exec(line);
@@ -97,6 +221,7 @@ function windowAround(lines, index, radius = CONTEXT_LINES) {
 
 export function scanText(text, file, options = {}) {
   const findings = [];
+  const pathContext = classifyPath(file);
   const lines = text.split(/\r?\n/);
   const seen = new Set();
 
@@ -166,6 +291,7 @@ export function scanText(text, file, options = {}) {
         quantum: rule.quantum,
         advice: rule.advice,
         file,
+        context: pathContext,
         line: i + 1,
         column: match.index + 1,
         bits,
@@ -174,7 +300,7 @@ export function scanText(text, file, options = {}) {
       });
     }
   }
-  return findings;
+  return applyContext(findings, options, lines);
 }
 
 // Evidence should prove the finding without copying the secret out of the file.
@@ -216,6 +342,10 @@ export function scanTree(root, options = {}) {
       continue;
     }
     if (text.includes('\u0000')) {
+      skipped += 1;
+      continue;
+    }
+    if (isLockfile(file) && options.lockfiles !== true) {
       skipped += 1;
       continue;
     }

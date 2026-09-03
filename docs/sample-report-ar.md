@@ -3,7 +3,7 @@
 ما التشفير الذي نشغله فعلا وما الذي ينكسر أولا.
 
 الهدف: `/home/claude/miftah/examples/sample-estate`
-تاريخ الإصدار: 2026-09-03T10:30:08.812Z
+تاريخ الإصدار: 2026-09-03T10:40:46.132Z
 
 ## الخلاصة
 
@@ -18,7 +18,7 @@
 | الملفات المقروءة | 7 |
 | درجة المرونة | 25 / 100 |
 
-حرجة 5, عالية 21, متوسطة 8, منخفضة 3, معلومة 10.
+حرجة 5, عالية 21, متوسطة 7, منخفضة 3, معلومة 11.
 
 ## الأفق الزمني
 
@@ -98,7 +98,6 @@
 | عالية | ECB mode | `src/legacy.js:18` | Move to GCM. ECB leaks plaintext structure whatever the cipher. |
 | منخفضة | AES-128 recorded | `src/legacy.js:18` | Move to AES-256 for anything with a secrecy horizon past 2035. |
 | عالية | Non cryptographic randomness in a cryptographic context | `src/legacy.js:23` | Use crypto.randomBytes, secrets.token_bytes, or the platform CSPRNG. |
-| متوسطة | Ed25519 or X25519 in use | `src/modern.js:4` | Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside. |
 
 ## خارطة الانتقال
 

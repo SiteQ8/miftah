@@ -3,7 +3,7 @@
 What cryptography do we run, and what breaks first.
 
 Target: `/home/claude/miftah/examples/sample-estate`
-Generated: 2026-09-03T10:30:08.812Z
+Generated: 2026-09-03T10:40:46.132Z
 
 ## Summary
 
@@ -18,7 +18,7 @@ Generated: 2026-09-03T10:30:08.812Z
 | Files read | 7 |
 | Agility score | 25 / 100 |
 
-critical 5, high 21, medium 8, low 3, info 10.
+critical 5, high 21, medium 7, low 3, info 11.
 
 ## The horizon
 
@@ -98,7 +98,6 @@ The secrecy requirement outruns the horizon by 8.67 years, so traffic recorded t
 | high | ECB mode | `src/legacy.js:18` | Move to GCM. ECB leaks plaintext structure whatever the cipher. |
 | low | AES-128 recorded | `src/legacy.js:18` | Move to AES-256 for anything with a secrecy horizon past 2035. |
 | high | Non cryptographic randomness in a cryptographic context | `src/legacy.js:23` | Use crypto.randomBytes, secrets.token_bytes, or the platform CSPRNG. |
-| medium | Ed25519 or X25519 in use | `src/modern.js:4` | Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside. |
 
 ## Migration roadmap
 

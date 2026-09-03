@@ -165,3 +165,92 @@ test('every rule id is unique and every rule carries advice', () => {
     assert.ok(rule.pattern instanceof RegExp, `${rule.id} has no pattern`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Context. Scanning a portfolio of security tools showed the scanner could not
+// tell using MD5 from naming it. A denylist of weak ciphers, a test asserting
+// they are caught, and a fixture called vulnerable_config.env were all reported
+// as vulnerabilities, which on a security codebase drowns everything real.
+// ---------------------------------------------------------------------------
+
+test('a denylist of weak algorithms is not a use of them', () => {
+  const findings = scanText('_WEAK_CIPHER_TOKENS = ("RC4", "DES", "CBC3", "NULL", "EXPORT", "MD5")', 'grading.py');
+  assert.ok(findings.length > 0, 'the algorithms should still be recorded');
+  for (const finding of findings) {
+    assert.equal(finding.context, 'catalogue', `${finding.rule} was not recognised as a list`);
+    assert.ok(['low', 'info'].includes(finding.severity), `${finding.rule} kept severity ${finding.severity}`);
+  }
+});
+
+test('a protocol table spread over several lines is still a table', () => {
+  const findings = scanText(
+    ['SUPPORTED = [', '    ("SSL 3.0", "SSLv3"),', '    ("TLS 1.0", "TLSv1"),', '    ("TLS 1.1", "TLSv1_1"),', ']'].join('\n'),
+    'protocols.py'
+  );
+  assert.ok(findings.length >= 2);
+  assert.ok(findings.every((f) => f.context === 'catalogue'), 'a multi line table was read as configuration');
+});
+
+test('remediation advice is not a vulnerability', () => {
+  const [finding] = scanText('advice = "Remove RC4, 3DES, export and null ciphers from the config"', 'grading.py');
+  assert.ok(finding);
+  assert.equal(finding.context, 'catalogue');
+});
+
+test('a regex that detects key types is not a use of them', () => {
+  const findings = scanText('PATTERN = re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY")', 'rules.py');
+  assert.ok(findings.every((f) => f.context === 'catalogue' || f.materialType), 'a detector regex read as key usage');
+});
+
+test('a cipher list in configuration is configuration, not a catalogue', () => {
+  // This is the inverse mistake and the more dangerous one. An OpenSSL cipher
+  // string names many suites and is the most actionable line in the file.
+  const findings = scanText('ciphers: "ECDHE-RSA-AES128-SHA:DES-CBC3-SHA:RC4-MD5"', 'config/app.yaml');
+  assert.ok(findings.length >= 3);
+  assert.ok(findings.every((f) => !f.context), 'live configuration was downgraded as a list');
+  assert.ok(findings.some((f) => f.severity === 'critical'), 'the weakest suite lost its severity');
+});
+
+test('test code is downgraded but never dropped', () => {
+  const [finding] = scanText('self.assertTrue(is_weak_cipher("ECDHE-RSA-RC4-SHA"))', 'tests/test_grading.py');
+  assert.ok(finding, 'the finding was dropped rather than downgraded');
+  assert.equal(finding.context, 'test');
+  assert.equal(finding.originalSeverity, 'critical');
+  assert.equal(finding.severity, 'low');
+});
+
+test('a file that names itself insecure is treated as a fixture', () => {
+  const findings = scanText('password = "Zx9Kq2Lm4Np7Rt5Vw8Yb1Dc3Fg6Hj0Ks"', 'vulnerable_config.env');
+  assert.ok(findings.length >= 1);
+  assert.equal(findings[0].context, 'fixture');
+});
+
+test('example directories keep their full severity', () => {
+  // People copy from examples into production far more readily than from tests.
+  const [finding] = scanText("crypto.createHash('md5')", 'examples/demo/app.js');
+  assert.ok(finding);
+  assert.ok(!finding.context, 'example code was downgraded');
+  assert.equal(finding.severity, 'high');
+});
+
+test('algorithms in prose are downgraded but key material is not', () => {
+  const [mention] = scanText('We use MD5 for legacy resource IDs.', 'README.md');
+  assert.equal(mention.context, 'documentation');
+
+  const [secret] = scanText('API_SECRET = "Zx9Kq2Lm4Np7Rt5Vw8Yb1Dc3Fg6Hj0Ks"', 'README.md')
+    .filter((f) => f.rule === 'MFT-K001');
+  assert.ok(secret, 'a secret pasted into a README was not caught');
+  assert.ok(!secret.context, 'a leaked key is a leaked key wherever it is written');
+  assert.equal(secret.severity, 'critical');
+});
+
+test('lockfiles are not scanned', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'miftah-lock-'));
+  fs.writeFileSync(path.join(dir, 'package-lock.json'),
+    JSON.stringify({ packages: { a: { integrity: 'sha512-' + 'A'.repeat(60) } } }));
+  const scan = scanTree(dir);
+  assert.equal(scan.findings.length, 0, 'lockfile integrity hashes were reported as findings');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
