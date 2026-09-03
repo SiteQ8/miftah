@@ -65,6 +65,8 @@ Options
   --endpoint <h:p>     Fold a live TLS probe into a scan, repeatable
   --fail-on <level>    Exit non zero at or above this severity
   --exclude <dir>      Skip a directory, repeatable
+  --strict             Do not downgrade findings in tests, fixtures or lists
+  --lockfiles          Scan dependency lockfiles as well
   --quiet              Suppress the console summary
   --version            Print the version
   --help               Print this text
@@ -86,7 +88,7 @@ function parseArgs(argv) {
     }
     const name = arg.slice(2);
     const takesValue = ![
-      'quiet', 'help', 'version', 'no-color', 'validate', 'redact'
+      'quiet', 'help', 'version', 'no-color', 'validate', 'redact', 'strict', 'lockfiles'
     ].includes(name);
     if (!takesValue) {
       options[name] = true;
@@ -191,7 +193,12 @@ async function commandScan(options) {
   const target = options._[1] || '.';
   if (!fs.existsSync(target)) throw new Error(`No such path: ${target}`);
 
-  const scan = scanTree(target, { exclude: options.exclude, redactEvidence: options.redact !== false });
+  const scan = scanTree(target, {
+    exclude: options.exclude,
+    redactEvidence: options.redact !== false,
+    strict: options.strict === true,
+    lockfiles: options.lockfiles === true
+  });
   scan.version = VERSION;
 
   if (options.certs) {

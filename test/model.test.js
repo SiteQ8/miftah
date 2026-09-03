@@ -124,7 +124,9 @@ test('the CBOM records the NIST quantum security level for post quantum assets',
 
 test('the validator rejects a malformed CBOM', () => {
   const bom = buildCbom(scan);
-  bom.components[0].cryptoProperties.algorithmProperties = { primitive: 'nonsense', cryptoFunctions: ['fly'], nistQuantumSecurityLevel: 99 };
+  const algorithm = bom.components.find((c) => c.cryptoProperties?.assetType === 'algorithm');
+  assert.ok(algorithm, 'the CBOM contained no algorithm component to corrupt');
+  algorithm.cryptoProperties.algorithmProperties = { primitive: 'nonsense', cryptoFunctions: ['fly'], nistQuantumSecurityLevel: 99 };
   const check = validateCbom(bom);
   assert.equal(check.valid, false);
   assert.ok(check.errors.length >= 2);

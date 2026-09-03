@@ -53,6 +53,16 @@ All four spellings of 3DES above resolve to one asset in the inventory. A scanne
 
 Every finding carries two verdicts, not one: a **classical** judgement and a **quantum** judgement. SHA-256 is classically sound and quantum weakened. RSA-4096 is classically strong and quantum broken. Collapsing those into a single score is how inventories end up misleading.
 
+### Naming an algorithm is not using one
+
+Run this against a security codebase and the difference matters immediately. A denylist of weak ciphers, a test asserting the weak ones get caught, and a fixture called `vulnerable_config.env` are not vulnerabilities, they are the tool working. Scanning fifteen security repositories produced 1582 findings and 14 criticals before this was handled, almost all of it noise that buried the four findings that were real.
+
+Findings in tests, in files that name themselves insecure, in prose, and on lines that read as a list of algorithm names are tagged and **downgraded, never dropped**, because a real key committed to a test fixture is still a real key. Dependency lockfiles are skipped, since one `package-lock.json` contributed 1474 `sha512` integrity hashes on its own.
+
+The inverse mistake is the more dangerous one, so it is guarded explicitly: an OpenSSL cipher string in a configuration file names many suites at once and is the most actionable line in the file. Configuration is never treated as a catalogue, and `examples/` keeps full severity because people copy from examples into production more readily than from tests.
+
+`--strict` turns all of it off.
+
 ---
 
 ## Usage
@@ -158,7 +168,7 @@ cd miftah
 node --test "test/*.test.js"
 ```
 
-95 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
+105 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
 
 ---
 

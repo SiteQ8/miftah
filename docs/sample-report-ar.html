@@ -296,8 +296,7 @@ li { margin-bottom: 5px; }
 <tr><td><span class="chip" style="background:#B3341F;color:#ffffff">عالية</span></td><td><strong>Triple DES in use</strong></td><td><code>src/legacy.js:13</code></td><td>Replace with AES-256-GCM. Disallowed by NIST SP 800 131A.</td></tr>
 <tr><td><span class="chip" style="background:#B3341F;color:#ffffff">عالية</span></td><td><strong>ECB mode</strong></td><td><code>src/legacy.js:18</code></td><td>Move to GCM. ECB leaks plaintext structure whatever the cipher.</td></tr>
 <tr><td><span class="chip" style="background:#4E7A92;color:#ffffff">منخفضة</span></td><td><strong>AES-128 recorded</strong></td><td><code>src/legacy.js:18</code></td><td>Move to AES-256 for anything with a secrecy horizon past 2035.</td></tr>
-<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">عالية</span></td><td><strong>Non cryptographic randomness in a cryptographic context</strong></td><td><code>src/legacy.js:23</code></td><td>Use crypto.randomBytes, secrets.token_bytes, or the platform CSPRNG.</td></tr>
-<tr><td><span class="chip" style="background:#FFB020;color:#0B1A24">متوسطة</span></td><td><strong>Ed25519 or X25519 in use</strong></td><td><code>src/modern.js:4</code></td><td>Keep it as the classical half of a hybrid, then add ML-KEM-768 or ML-DSA-65 alongside.</td></tr></tbody></table>
+<tr><td><span class="chip" style="background:#B3341F;color:#ffffff">عالية</span></td><td><strong>Non cryptographic randomness in a cryptographic context</strong></td><td><code>src/legacy.js:23</code></td><td>Use crypto.randomBytes, secrets.token_bytes, or the platform CSPRNG.</td></tr></tbody></table>
   </section>
 
   

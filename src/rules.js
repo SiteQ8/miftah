@@ -34,7 +34,7 @@ function prefix(source, flags = 'i') {
   return new RegExp(`(?<![A-Za-z0-9])(?:${source})`, flags);
 }
 
-const SECRET_REJECT = /(process\.env|os\.environ|getenv|System\.getenv|ENV\[|\$\{|\{\{|<[a-z_]+>|xxxx|changeme|placeholder|example|your[-_]?key|dummy|sample|redacted|FIXME|TODO|https?:\/\/|BEGIN [A-Z ]*PRIVATE KEY)/i;
+const SECRET_REJECT = /(process\.env|os\.environ|getenv|System\.getenv|ENV\[|\$\{|\{\{|<[a-z_]+>|xxxx|changeme|placeholder|example|your[-_ ]?(?:app[-_ ]?)?(?:key|password|secret|token|api)|<your|replace[-_ ]?me|test[-_]?(?:key|token)|not[-_ ]?a[-_ ]?real|dummy|sample|redacted|FIXME|TODO|https?:\/\/|BEGIN [A-Z ]*PRIVATE KEY)/i;
 
 const PLACEHOLDER = /(process\.env|os\.environ|getenv|System\.getenv|ENV\[|\$\{|\{\{|<[a-z_]+>|xxxx|changeme|placeholder|example|your[-_]?key|dummy|sample|redacted|FIXME|TODO)/i;
 
