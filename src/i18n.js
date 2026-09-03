@@ -24,6 +24,8 @@ export const STRINGS = {
     sectionAgility: 'Crypto agility',
     sectionMethod: 'Method',
 
+    exposedYears: 'years exposed',
+    marginYears: 'years of margin',
     readiness: 'Post quantum readiness',
     peakRisk: 'Highest asset risk',
     assets: 'Cryptographic assets',
@@ -33,6 +35,7 @@ export const STRINGS = {
     alreadyResistant: 'Already quantum resistant',
 
     moscaHeading: 'Mosca inequality',
+    horizonLabel: 'Quantum horizon',
     moscaExplain: 'Data that must stay secret for x years, in an estate that takes y years to migrate, is already exposed when x plus y exceeds z, the years remaining before a cryptographically relevant quantum computer exists.',
     moscaBreached: 'The secrecy requirement outruns the horizon by {deficit} years, so traffic recorded today is readable before the data stops mattering.',
     moscaClear: 'The secrecy requirement fits inside the horizon with {slack} years to spare, though the margin shrinks every year the migration is deferred.',
@@ -101,6 +104,8 @@ export const STRINGS = {
     sectionAgility: 'مرونة التشفير',
     sectionMethod: 'المنهجية',
 
+    exposedYears: 'سنة من الانكشاف',
+    marginYears: 'سنة من الفسحة',
     readiness: 'الجاهزية لما بعد الكم',
     peakRisk: 'أعلى خطورة لأصل واحد',
     assets: 'أصول التشفير',
@@ -110,6 +115,7 @@ export const STRINGS = {
     alreadyResistant: 'أصول مقاومة للكم',
 
     moscaHeading: 'متباينة موسكا',
+    horizonLabel: 'الأفق الكمي',
     moscaExplain: 'البيانات التي يجب أن تبقى سرية مدة س سنة، في بيئة يستغرق انتقالها ص سنة، تكون مكشوفة فعلا متى تجاوز مجموع س وص عدد السنوات المتبقية قبل ظهور حاسوب كمي قادر على كسر التشفير.',
     moscaBreached: 'مدة السرية المطلوبة تتجاوز الأفق بمقدار {deficit} سنة، لذا فإن ما يسجل من حركة اليوم يصبح مقروءا قبل أن تفقد البيانات قيمتها.',
     moscaClear: 'مدة السرية المطلوبة تقع داخل الأفق بفارق {slack} سنة، لكن هذا الفارق يتقلص كل عام يؤجل فيه الانتقال.',

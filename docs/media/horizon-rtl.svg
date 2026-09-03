@@ -1,32 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260" role="img" aria-label="الأفق الكمي">
-<rect width="900" height="260" fill="#faf8f3"/>
-<line x1="92" y1="188" x2="860" y2="188" stroke="#d9d3c6" stroke-width="1"/>
-<line x1="860.0" y1="188" x2="860.0" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="860.0" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2026</text>
-<line x1="773.7" y1="188" x2="773.7" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="773.7" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2028</text>
-<line x1="687.4" y1="188" x2="687.4" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="687.4" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2030</text>
-<line x1="601.1" y1="188" x2="601.1" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="601.1" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2032</text>
-<line x1="514.8" y1="188" x2="514.8" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="514.8" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2034</text>
-<line x1="428.5" y1="188" x2="428.5" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="428.5" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2036</text>
-<line x1="342.2" y1="188" x2="342.2" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="342.2" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2038</text>
-<line x1="256.0" y1="188" x2="256.0" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="256.0" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2040</text>
-<line x1="169.7" y1="188" x2="169.7" y2="194" stroke="#d9d3c6" stroke-width="1"/>
-<text x="169.7" y="210" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" font-size="12" fill="#6d7b88" text-anchor="middle">2042</text>
-<rect x="212.8" y="82" width="374.1" height="82" fill="#a8341f" fill-opacity="0.10"/>
-<rect x="644.3" y="104" width="215.7" height="38" fill="#a8791c" fill-opacity="0.85"/>
-<rect x="212.8" y="104" width="431.5" height="38" fill="#1c2733" fill-opacity="0.82"/>
-<line x1="586.9" y1="62" x2="586.9" y2="188" stroke="#7a2f1c" stroke-width="2" stroke-dasharray="6 4"/>
-<circle cx="586.9" cy="62.0" r="4" fill="#7a2f1c"/>
-<text x="594.9" y="54" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" direction="rtl" unicode-bidi="isolate" font-size="14" font-weight="bold" fill="#7a2f1c" text-anchor="start">الأفق الكمي 2033</text>
-<text x="752.1" y="128" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" direction="rtl" unicode-bidi="isolate" font-size="13" fill="#ffffff" text-anchor="middle">مدة الانتقال 5</text>
-<text x="428.5" y="128" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" direction="rtl" unicode-bidi="isolate" font-size="13" fill="#ffffff" text-anchor="middle">مدة سرية البيانات 10</text>
-<text x="399.8" y="168" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" direction="rtl" unicode-bidi="isolate" font-size="13" font-weight="bold" fill="#a8341f" text-anchor="middle">نافذة الانكشاف 8.67 سنة</text>
-<text x="860" y="90" font-family="'Noto Naskh Arabic',Amiri,'Traditional Arabic','Iowan Old Style',Georgia,serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#6d7b88" text-anchor="end">اليوم</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 210" width="960" height="210" role="img" aria-label="الأفق الكمي 2033">
+<line x1="28" y1="164" x2="932" y2="164" stroke="#D5DCE0" stroke-width="1"/>
+<line x1="932.0" y1="164" x2="932.0" y2="169" stroke="#D5DCE0" stroke-width="1"/>
+<text x="932.0" y="186" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#5A727F" text-anchor="middle" style="font-variant-numeric:tabular-nums">2026</text>
+<line x1="825.6" y1="164" x2="825.6" y2="169" stroke="#D5DCE0" stroke-width="1"/>
+<text x="825.6" y="186" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#5A727F" text-anchor="middle" style="font-variant-numeric:tabular-nums">2028</text>
+<line x1="719.3" y1="164" x2="719.3" y2="169" stroke="#D5DCE0" stroke-width="1"/>
+<text x="719.3" y="186" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#5A727F" text-anchor="middle" style="font-variant-numeric:tabular-nums">2030</text>
+<line x1="612.9" y1="164" x2="612.9" y2="169" stroke="#D5DCE0" stroke-width="1"/>
+<text x="612.9" y="186" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#5A727F" text-anchor="middle" style="font-variant-numeric:tabular-nums">2032</text>
+<line x1="506.6" y1="164" x2="506.6" y2="169" stroke="#D5DCE0" stroke-width="1"/>
+<text x="506.6" y="186" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#5A727F" text-anchor="middle" style="font-variant-numeric:tabular-nums">2034</text>
+<line x1="400.2" y1="164" x2="400.2" y2="169" stroke="#D5DCE0" stroke-width="1"/>
+<text x="400.2" y="186" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#5A727F" text-anchor="middle" style="font-variant-numeric:tabular-nums">2036</text>
+<line x1="293.9" y1="164" x2="293.9" y2="169" stroke="#D5DCE0" stroke-width="1"/>
+<text x="293.9" y="186" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#5A727F" text-anchor="middle" style="font-variant-numeric:tabular-nums">2038</text>
+<line x1="187.5" y1="164" x2="187.5" y2="169" stroke="#D5DCE0" stroke-width="1"/>
+<text x="187.5" y="186" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#5A727F" text-anchor="middle" style="font-variant-numeric:tabular-nums">2040</text>
+<line x1="81.2" y1="164" x2="81.2" y2="169" stroke="#D5DCE0" stroke-width="1"/>
+<text x="81.2" y="186" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#5A727F" text-anchor="middle" style="font-variant-numeric:tabular-nums">2042</text>
+<rect x="666.1" y="74" width="265.9" height="56" fill="#9DB2BD"/>
+<text x="799.1" y="107" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="14" font-weight="500" fill="#0B1A24" text-anchor="middle" style="font-variant-numeric:tabular-nums">مدة الانتقال 5</text>
+<rect x="595.4" y="74" width="70.7" height="56" fill="#4E7A92"/>
+<rect x="134.4" y="74" width="461.0" height="56" fill="#FF5A3C"/>
+<text x="364.9" y="107" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="14" font-weight="600" fill="#FFFFFF" text-anchor="middle" style="font-variant-numeric:tabular-nums">نافذة الانكشاف 8.67 سنة</text>
+<text x="400.2" y="154" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="13" fill="#5A727F" text-anchor="middle" style="font-variant-numeric:tabular-nums">مدة سرية البيانات 10</text>
+<line x1="595.4" y1="44" x2="595.4" y2="164" stroke="#B3341F" stroke-width="2"/>
+<circle cx="595.4" cy="44" r="4" fill="#B3341F"/>
+<text x="605.4" y="48" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="14" font-weight="600" fill="#B3341F" text-anchor="start" style="font-variant-numeric:tabular-nums">الأفق الكمي 2033</text>
+<text x="932.0" y="60" font-family="'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif" direction="rtl" unicode-bidi="isolate" font-size="12" fill="#5A727F" text-anchor="end" style="font-variant-numeric:tabular-nums">اليوم</text>
 </svg>

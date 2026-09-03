@@ -1,5 +1,6 @@
 import test from 'node:test';
 import { VERSION } from '../src/version.js';
+import { THEME } from '../src/theme.js';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 
@@ -266,8 +267,30 @@ test('the horizon strip is valid standalone SVG using literal colours', () => {
 test('the horizon strip marks the exposed window only when there is one', () => {
   const breached = horizonStrip(moscaDeficit({ shelfLife: 15, migrationYears: 5, crqcYear: 2030 }, NOW));
   const clear = horizonStrip(moscaDeficit({ shelfLife: 1, migrationYears: 1, crqcYear: 2050 }, NOW));
-  assert.ok(breached.includes('Exposed window'));
-  assert.ok(!clear.includes('Exposed window'));
+  assert.ok(breached.includes('Exposed'));
+  assert.ok(!clear.includes('Exposed'));
+  // The exposure is part of the bar rather than a wash laid over it, so the
+  // alarm colour must appear as a filled rect and only when there is exposure.
+  assert.ok(new RegExp(`<rect[^>]+fill="${THEME.alarm}"`).test(breached));
+  assert.ok(!clear.includes(THEME.alarm));
+});
+
+test('the horizon strip has a dark variant for the readout band', () => {
+  const mosca = moscaDeficit(DEFAULT_PROFILE, NOW);
+  const dark = horizonStrip(mosca, { theme: 'dark' });
+  const light = horizonStrip(mosca, { theme: 'light' });
+  assert.ok(dark.includes(THEME.signal), 'the dark strip should signal exposure in amber');
+  assert.ok(light.includes(THEME.alarm), 'the light strip should signal exposure in red');
+  assert.notEqual(dark, light);
+});
+
+test('the horizon strip always names the secrecy span', () => {
+  // A narrow safe sliver cannot hold its own label, so it must be captioned
+  // beneath instead. An unlabelled block is worse than a long label.
+  const narrow = horizonStrip(moscaDeficit({ shelfLife: 20, migrationYears: 1, crqcYear: 2028 }, NOW));
+  const wide = horizonStrip(moscaDeficit({ shelfLife: 4, migrationYears: 2, crqcYear: 2044 }, NOW));
+  assert.ok(narrow.includes('Must stay secret'), 'the secrecy span went unnamed when the safe part was narrow');
+  assert.ok(wide.includes('Must stay secret'));
 });
 
 test('the horizon strip mirrors for right to left', () => {
@@ -279,5 +302,14 @@ test('the composition bar renders every share', () => {
   const svg = compositionBar({ quantumBroken: 5, quantumWeakened: 2, quantumResistant: 3 });
   assert.ok(svg.startsWith('<svg'));
   assert.ok(svg.includes('</svg>'));
-  assert.equal((svg.match(/<rect/g) || []).length >= 6, true);
+  assert.equal((svg.match(/<rect/g) || []).length, 3, 'one rect per share and no decoration');
+  for (const label of ['broken', 'weakened', 'resistant']) {
+    assert.ok(svg.includes(label), `the ${label} share was not labelled`);
+  }
+});
+
+test('the composition bar drops shares that are zero', () => {
+  const svg = compositionBar({ quantumBroken: 4, quantumWeakened: 0, quantumResistant: 0 });
+  assert.equal((svg.match(/<rect/g) || []).length, 1);
+  assert.ok(!svg.includes('weakened'));
 });

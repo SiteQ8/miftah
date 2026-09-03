@@ -7,6 +7,7 @@ import { scoreEstate } from './risk.js';
 import { buildRoadmap } from './roadmap.js';
 import { runChecklist } from './agility.js';
 import { horizonStrip, compositionBar, PALETTE } from './timeline.js';
+import { THEME, SANS, SANS_AR, MONO, severityColour, quantumColour } from './theme.js';
 import { countBySeverity } from './scan.js';
 
 export function assemble(scan, profile = {}, now = new Date()) {
@@ -183,8 +184,23 @@ const SEVERITY_COLOUR = {
   info: PALETTE.resistant
 };
 
+// Amber and green need dark text to stay legible; red and slate need light.
+function chipText(background) {
+  return background === THEME.signal || background === THEME.live ? THEME.vault : '#ffffff';
+}
+
+function chip(label, background) {
+  return `<span class="chip" style="background:${background};color:${chipText(background)}">${escapeHtml(label)}</span>`;
+}
+
 function severityChip(label, severity) {
-  return `<span class="chip" style="--chip:${SEVERITY_COLOUR[severity] || PALETTE.muted}">${escapeHtml(label)}</span>`;
+  return chip(label, severityColour(severity));
+}
+
+// A quantum verdict is not a severity. Routing one through the other made
+// "resistant" borrow whatever colour "info" happened to be.
+function quantumChip(label, verdict) {
+  return chip(label, quantumColour(verdict));
 }
 
 function table(headers, rows, align = []) {
@@ -202,12 +218,13 @@ export function toHtml(model, locale = 'en') {
   const mosca = estate.mosca;
 
   const horizon = horizonStrip(mosca, {
+    theme: 'dark',
     rtl: dir === 'rtl',
     yearWord: L('years'),
     labels: {
       migration: L('migrationTime'),
       shelf: L('shelfLife'),
-      horizon: L('moscaHeading'),
+      horizon: L('horizonLabel'),
       exposed: locale === 'ar' ? 'نافذة الانكشاف' : 'Exposed window',
       today: locale === 'ar' ? 'اليوم' : 'Today'
     }
@@ -229,7 +246,7 @@ export function toHtml(model, locale = 'en') {
       `<strong>${escapeHtml(asset.name)}</strong>${asset.note ? `<span class="note">${escapeHtml(asset.note)}</span>` : ''}`,
       escapeHtml(asset.primitive),
       escapeHtml(L(`classical.${asset.classical}`)),
-      severityChip(L(`quantum.${asset.quantum}`), asset.quantum === 'broken' ? 'critical' : asset.quantum === 'weakened' ? 'medium' : 'info'),
+      quantumChip(L(`quantum.${asset.quantum}`), asset.quantum),
       `<span class="score" style="background-image:linear-gradient(to ${dir === 'rtl' ? 'left' : 'right'}, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) ${score.score}%, transparent ${score.score}%)">${score.score}</span>`,
       String(asset.occurrences.length),
       escapeHtml(asset.replacement || '')
@@ -302,17 +319,32 @@ ${styles(dir)}
 </style>
 </head>
 <body>
-<main>
-  <header class="masthead">
-    <p class="kicker">${escapeHtml(L('tool'))}</p>
-    <h1>${escapeHtml(L('title'))}</h1>
-    <p class="lede">${escapeHtml(L('subtitle'))}.</p>
+<div class="vault">
+  <header class="bar">
+    <div class="brand">
+      <span class="wordmark">miftah</span>
+      <span class="wordmark-ar" lang="ar" dir="rtl">مفتاح</span>
+    </div>
     <dl class="meta">
       <div><dt>${escapeHtml(L('target'))}</dt><dd><code>${escapeHtml(scan.target || '')}</code></dd></div>
       <div><dt>${escapeHtml(L('generated'))}</dt><dd>${escapeHtml(model.generatedAt.slice(0, 10))}</dd></div>
     </dl>
   </header>
 
+  <h1>${escapeHtml(L('title'))}</h1>
+
+  <div class="readout-number">
+    <span class="huge ${mosca.breached ? '' : 'clear'}">${mosca.breached ? mosca.deficit : Math.abs(mosca.deficit)}</span>
+    <span class="huge-unit">${escapeHtml(mosca.breached ? L('exposedYears') : L('marginYears'))}</span>
+  </div>
+
+  <p class="verdict">${escapeHtml(mosca.breached ? L('moscaBreached', { deficit: mosca.deficit }) : L('moscaClear', { slack: Math.abs(mosca.deficit) }))}</p>
+
+  <figure class="horizon-figure">${horizon}</figure>
+  <p class="horizon-note">${escapeHtml(L('moscaExplain'))}</p>
+</div>
+
+<main>
   <section class="figures">
     <div class="figure headline">
       <span class="figure-value">${estate.readiness}</span>
@@ -324,11 +356,8 @@ ${styles(dir)}
     <div class="figure"><span class="figure-value">${agility.score}</span><span class="figure-label">${escapeHtml(L('agilityScore'))}</span></div>
   </section>
 
-  <section id="horizon">
+  <section id="composition">
     <h2>${escapeHtml(L('sectionHorizon'))}</h2>
-    <p>${escapeHtml(L('moscaExplain'))}</p>
-    <figure>${horizon}</figure>
-    <p class="verdict ${mosca.breached ? 'breached' : 'clear'}">${escapeHtml(mosca.breached ? L('moscaBreached', { deficit: mosca.deficit }) : L('moscaClear', { slack: Math.abs(mosca.deficit) }))}</p>
     <figure>${composition}</figure>
   </section>
 
@@ -374,88 +403,149 @@ ${styles(dir)}
 
 function styles(dir) {
   const start = dir === 'rtl' ? 'right' : 'left';
+  const end = dir === 'rtl' ? 'left' : 'right';
   return `
 :root {
-  --ink: ${PALETTE.ink};
-  --muted: ${PALETTE.muted};
-  --rule: ${PALETTE.rule};
-  --paper: ${PALETTE.paper};
-  --brass: ${PALETTE.brass};
-  --broken: ${PALETTE.broken};
-  --resistant: ${PALETTE.resistant};
+  --vault: ${THEME.vault};
+  --vault-line: ${THEME.vaultLine};
+  --paper: ${THEME.paper};
+  --paper-raised: ${THEME.paperRaised};
+  --paper-line: ${THEME.paperLine};
+  --ink: ${THEME.ink};
+  --slate: ${THEME.slate};
+  --on-vault: ${THEME.onVault};
+  --on-vault-dim: ${THEME.onVaultDim};
+  --signal: ${THEME.signal};
+  --live: ${THEME.live};
+  --alarm: ${THEME.alarm};
 }
+
 * { box-sizing: border-box; }
+
+html { overflow-x: hidden; }
+
 body {
   margin: 0;
+  max-width: 100%;
   background: var(--paper);
   color: var(--ink);
-  font-family: ${dir === 'rtl' ? "'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', Georgia, serif" : "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif"};
-  font-size: 17px;
-  line-height: 1.65;
+  font-family: ${dir === 'rtl' ? SANS_AR : SANS};
+  font-size: 15px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
-main { max-width: 1000px; margin: 0 auto; padding: 56px 28px 80px; }
-.masthead { border-bottom: 3px double var(--rule); padding-bottom: 28px; margin-bottom: 32px; }
-.kicker { margin: 0 0 10px; font-size: 13px; letter-spacing: 0.06em; color: var(--brass); }
-h1 { margin: 0 0 8px; font-size: clamp(30px, 5vw, 46px); line-height: 1.12; font-weight: 600; }
-.lede { margin: 0 0 20px; color: var(--muted); font-size: 19px; max-width: 62ch; }
-.meta { display: flex; flex-wrap: wrap; gap: 28px; margin: 0; }
-.meta div { margin: 0; }
-.meta dt { font-size: 12px; color: var(--muted); margin: 0 0 2px; }
-.meta dd { margin: 0; font-size: 14px; }
-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; background: rgba(28,39,51,0.05); padding: 1px 5px; border-radius: 3px; }
 
-.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-bottom: 48px; }
-.figure { background: var(--paper); padding: 20px 18px; display: flex; flex-direction: column; gap: 4px; }
-.figure-value { font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
-.headline .figure-value { font-size: 54px; color: var(--brass); }
-.figure-label { font-size: 12px; color: var(--muted); }
+.vault { background: var(--vault); color: var(--on-vault); padding: 0 32px 44px; }
+.vault > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
 
-section { margin-bottom: 52px; }
-h2 { font-size: 26px; margin: 0 0 14px; font-weight: 600; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
-h3 { font-size: 19px; margin: 28px 0 10px; font-weight: 600; }
-p { max-width: 72ch; }
-figure { margin: 22px 0; border: 1px solid var(--rule); overflow-x: auto; }
+.bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 22px 0 34px;
+}
+
+.brand { display: flex; align-items: baseline; }
+.wordmark { font-size: 19px; font-weight: 600; letter-spacing: 0.02em; margin-${end}: 12px; }
+.wordmark-ar { font-size: 19px; color: var(--signal); }
+
+.meta { display: flex; flex-wrap: wrap; margin: 0; font-size: 13px; min-width: 0; max-width: 100%; }
+.meta > div { margin-${start}: 26px; }
+.meta dt { color: var(--on-vault-dim); margin: 0 0 2px; }
+.meta dd { margin: 0; color: var(--on-vault); }
+.meta code { font-family: ${MONO}; font-size: 12.5px; }
+
+.vault h1 { font-size: 21px; font-weight: 400; color: var(--on-vault-dim); margin: 0 0 18px; letter-spacing: 0; }
+
+.readout-number { display: flex; align-items: baseline; flex-wrap: wrap; }
+
+.huge {
+  font-size: 116px;
+  font-size: clamp(58px, 12vw, 128px);
+  font-weight: 300;
+  line-height: 0.88;
+  letter-spacing: -0.035em;
+  color: var(--signal);
+  margin-${end}: 16px;
+}
+
+.huge.clear { color: var(--live); }
+.huge-unit { font-size: 17px; color: var(--on-vault-dim); }
+
+.verdict { margin: 18px 0 0; max-width: 62ch; font-size: 17px; color: var(--on-vault); }
+.horizon-figure { margin: 28px 0 0; }
+.horizon-figure svg { display: block; width: 100%; height: auto; }
+.horizon-note { margin: 16px 0 0; max-width: 68ch; font-size: 14px; color: var(--on-vault-dim); }
+
+main { padding: 0 32px 80px; }
+main > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
+
+.figures {
+  display: -webkit-box;
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--paper-line);
+  margin-bottom: 40px;
+}
+
+@supports (display: grid) {
+  .figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+}
+
+.figure { flex: 1 1 140px; min-width: 140px; padding: 24px 20px 24px 0; }
+.figure-value { display: block; font-size: 34px; font-weight: 300; line-height: 1.05; letter-spacing: -0.02em; }
+.figure-label { display: block; font-size: 13px; color: var(--slate); margin-top: 2px; }
+.headline .figure-value { color: var(--alarm); }
+
+section { margin-bottom: 46px; }
+h2 { font-size: 22px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+h3 { font-size: 17px; font-weight: 600; margin: 26px 0 6px; }
+p { margin: 0 0 14px; max-width: 74ch; }
+figure { margin: 20px 0; }
 figure svg { display: block; width: 100%; height: auto; }
-.verdict { padding: 14px 18px; border-${start}: 4px solid var(--muted); background: rgba(28,39,51,0.03); max-width: none; }
-.verdict.breached { border-${start}-color: var(--broken); }
-.verdict.clear { border-${start}-color: var(--resistant); }
 
-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; }
-th, td { text-align: ${start}; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
-th { font-size: 12px; color: var(--muted); font-weight: 600; border-bottom: 2px solid var(--ink); }
-td.num, th.num { text-align: ${dir === 'rtl' ? 'left' : 'right'}; font-variant-numeric: tabular-nums; }
-tbody tr:hover { background: rgba(168,121,28,0.06); }
-.note { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+th, td { overflow-wrap: anywhere; word-break: break-word; }
+th { text-align: ${start}; font-size: 12px; font-weight: 600; color: var(--slate); padding: 0 14px 10px 0; border-bottom: 1px solid var(--paper-line); }
+td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--paper-line); vertical-align: top; }
+td.right, th.right { text-align: ${end}; }
+tbody tr:hover { background: var(--paper-raised); }
 
-.chip { display: inline-block; padding: 2px 9px; border-radius: 2px; font-size: 12px; color: #fff; background: var(--chip); white-space: nowrap; }
-.score { display: inline-block; width: 62px; padding: 2px 8px; text-align: ${dir === 'rtl' ? 'left' : 'right'}; font-variant-numeric: tabular-nums; background-color: rgba(168,52,31,0.06); }
-.status { display: inline-block; padding: 2px 9px; border-radius: 2px; font-size: 12px; white-space: nowrap; }
-.status-pass { background: rgba(47,107,94,0.16); color: var(--resistant); }
-.status-fail { background: rgba(168,52,31,0.14); color: var(--broken); }
-.status-partial { background: rgba(192,138,26,0.18); color: #8a610f; }
-.status-manual { background: rgba(109,123,136,0.14); color: var(--muted); }
+.note { display: block; color: var(--slate); font-size: 13.5px; margin-top: 3px; max-width: 46ch; }
+.mono, code { font-family: ${MONO}; font-size: 13px; }
+/* A file path reads left to right even inside a right to left document. */
+code, .mono { direction: ltr; unicode-bidi: isolate; display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
+code { color: var(--slate); }
 
-.actions { padding-${start}: 22px; max-width: 72ch; }
-.actions li { margin-bottom: 10px; }
-.wave { margin-top: 32px; padding-top: 4px; }
-.wave h3 { display: flex; align-items: baseline; gap: 12px; }
-.wave-mark { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid var(--brass); color: var(--brass); font-size: 15px; flex-shrink: 0; }
-.wave-window { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
-.wave-goal { margin: 0 0 8px; }
-.empty { color: var(--muted); font-style: italic; }
-.agility-score { font-size: 18px; }
-footer { border-top: 1px solid var(--rule); padding-top: 18px; color: var(--muted); font-size: 13px; }
+.chip { display: inline-block; padding: 3px 9px; font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; }
+.score { display: inline-block; width: 66px; padding: 3px 8px; text-align: ${end}; background-color: rgba(255,90,60,0.08); }
 
-@media (max-width: 640px) {
-  main { padding: 32px 16px 56px; }
-  table { font-size: 13px; }
-  th, td { padding: 7px 8px; }
+.wave { margin-bottom: 30px; }
+.wave-window { font-size: 13px; font-weight: 400; color: var(--slate); margin-${start}: 10px; }
+.empty { color: var(--slate); }
+
+ul { margin: 0 0 14px; padding-${start}: 20px; }
+li { margin-bottom: 5px; }
+
+@media (max-width: 620px) {
+  .vault { padding: 0 18px 32px; }
+  main { padding: 0 18px 60px; }
+  .meta > div { margin-${start}: 0; margin-${end}: 24px; }
 }
+
 @media print {
-  body { background: #fff; }
+  body { background: #fff; font-size: 11pt; }
+  .vault { background: #fff; color: var(--ink); padding: 0 0 20pt; border-bottom: 2px solid var(--ink); }
+  .vault h1, .horizon-note, .meta dt { color: var(--slate); }
+  .verdict, .meta dd, .wordmark { color: var(--ink); }
+  .huge { font-size: 60pt; color: var(--alarm); }
+  .huge.clear { color: #1a7a5c; }
+  main { padding: 0; }
+  section { break-inside: avoid; margin-bottom: 24pt; }
   tbody tr:hover { background: none; }
+  .chip { border: 1px solid currentColor; }
 }
 `;
 }
-
-export default toMarkdown;

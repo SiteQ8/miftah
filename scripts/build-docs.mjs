@@ -5,7 +5,8 @@ import path from 'node:path';
 
 import { scanTree } from '../src/scan.js';
 import { moscaDeficit, scoreEstate } from '../src/risk.js';
-import { horizonStrip, compositionBar, PALETTE, FONT } from '../src/timeline.js';
+import { horizonStrip, compositionBar } from '../src/timeline.js';
+import { THEME, SANS, MONO } from '../src/theme.js';
 import { buildConsole } from '../src/console.js';
 import { assemble, toHtml, toMarkdown } from '../src/report.js';
 import { buildCbom } from '../src/cbom.js';
@@ -55,8 +56,9 @@ for (const locale of ['en', 'ar']) {
 }
 
 // --------------------------------------------------------------- the page
-const hero = horizonStrip(mosca, { width: 960, height: 250 });
+const hero = horizonStrip(mosca, { theme: 'dark', width: 1000, height: 210 });
 const counts = estate.counts;
+const worst = [...estate.assets].sort((a, b) => b.score - a.score).slice(0, 6);
 
 const page = `<!doctype html>
 <html lang="en">
@@ -64,201 +66,246 @@ const page = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Miftah, cryptographic inventory and post quantum readiness</title>
-<meta name="description" content="Miftah reads a code tree, certificates and live endpoints, writes a CycloneDX 1.6 CBOM, and scores post quantum exposure using Mosca's inequality.">
+<meta name="description" content="Miftah reads a code tree, certificates and live endpoints, writes a CycloneDX 1.6 CBOM, and scores post quantum exposure using Mosca inequality.">
 <style>
   :root {
-    --ink: ${PALETTE.ink};
-    --muted: ${PALETTE.muted};
-    --rule: ${PALETTE.rule};
-    --paper: ${PALETTE.paper};
-    --brass: ${PALETTE.brass};
-    --broken: ${PALETTE.broken};
-    --resistant: ${PALETTE.resistant};
-    --weakened: ${PALETTE.weakened};
+    --vault: ${THEME.vault};
+    --vault-raised: ${THEME.vaultRaised};
+    --vault-line: ${THEME.vaultLine};
+    --paper: ${THEME.paper};
+    --paper-raised: ${THEME.paperRaised};
+    --paper-line: ${THEME.paperLine};
+    --ink: ${THEME.ink};
+    --slate: ${THEME.slate};
+    --on-vault: ${THEME.onVault};
+    --on-vault-dim: ${THEME.onVaultDim};
+    --signal: ${THEME.signal};
+    --live: ${THEME.live};
+    --alarm: ${THEME.alarm};
+    --steel: ${THEME.steel};
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
     background: var(--paper);
     color: var(--ink);
-    font-family: ${FONT};
-    font-size: 17px;
-    line-height: 1.62;
+    font-family: ${SANS};
+    font-size: 16px;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
-  header { padding: 84px 0 32px; }
-  h1 { font-size: 46px; margin: 0 0 4px; letter-spacing: -0.01em; font-weight: 600; }
-  .arabic { font-family: 'Noto Naskh Arabic', Amiri, serif; color: var(--brass); font-size: 30px; }
-  .tagline { font-size: 21px; color: var(--muted); margin: 12px 0 0; max-width: 46em; }
-  .rule { height: 1px; background: var(--rule); border: 0; margin: 48px 0; }
-  h2 { font-size: 25px; margin: 0 0 14px; font-weight: 600; }
-  h3 { font-size: 18px; margin: 30px 0 8px; font-weight: 600; }
-  p { margin: 0 0 16px; }
-  a { color: var(--brass); }
-  figure { margin: 28px 0; }
-  figure svg { width: 100%; height: auto; display: block; }
-  figcaption { color: var(--muted); font-size: 15px; margin-top: 8px; }
-  pre {
-    background: #fff;
-    border: 1px solid var(--rule);
-    border-left: 3px solid var(--brass);
-    padding: 14px 18px;
-    overflow-x: auto;
-    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-    font-size: 14.5px;
-    line-height: 1.55;
+  :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+  code, pre { font-family: ${MONO}; }
+
+  .vault { background: var(--vault); color: var(--on-vault); padding: 0 32px 56px; }
+  .inner { max-width: 1060px; margin: 0 auto; }
+
+  .bar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; padding: 22px 0 46px; }
+  .brand { display: flex; align-items: baseline; }
+  .wordmark { font-size: 20px; font-weight: 600; letter-spacing: 0.02em; margin-right: 12px; }
+  .wordmark-ar { font-size: 20px; color: var(--signal); }
+  .bar nav a { color: var(--on-vault-dim); text-decoration: none; font-size: 15px; margin-left: 22px; }
+  .bar nav a:hover { color: var(--signal); }
+
+  .readout { display: flex; align-items: baseline; flex-wrap: wrap; }
+  .huge {
+    font-size: 130px;
+    font-size: clamp(72px, 15vw, 168px);
+    font-weight: 300;
+    line-height: 0.84;
+    letter-spacing: -0.04em;
+    color: var(--signal);
+    margin-right: 20px;
   }
-  code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.93em; }
-  p code, li code, td code { background: #fff; border: 1px solid var(--rule); padding: 1px 5px; }
-  .cta { display: flex; gap: 12px; flex-wrap: wrap; margin: 30px 0 0; }
+  .huge-unit { font-size: 19px; color: var(--on-vault-dim); }
+
+  .claim { font-size: 21px; line-height: 1.45; max-width: 34ch; margin: 26px 0 0; color: var(--on-vault); }
+  .hero-figure { margin: 34px 0 0; }
+  .hero-figure svg { display: block; width: 100%; height: auto; }
+  .hero-note { margin: 14px 0 0; font-size: 14px; color: var(--on-vault-dim); max-width: 70ch; }
+
+  .cta { display: flex; flex-wrap: wrap; margin: 40px 0 0; }
   .cta a {
-    display: inline-block; padding: 11px 20px; text-decoration: none;
-    border: 1px solid var(--ink); color: var(--ink); font-size: 16px;
+    display: inline-block; padding: 12px 22px; text-decoration: none; font-size: 16px;
+    border: 1px solid var(--vault-line); color: var(--on-vault); margin-right: 10px; margin-bottom: 10px;
   }
-  .cta a.primary { background: var(--ink); color: var(--paper); }
-  .stats { display: flex; flex-wrap: wrap; gap: 34px; margin: 26px 0 0; }
-  .stat-value { font-size: 32px; font-weight: 600; line-height: 1.1; }
-  .stat-label { color: var(--muted); font-size: 14px; }
-  .broken { color: var(--broken); }
-  .weakened { color: var(--weakened); }
-  .resistant { color: var(--resistant); }
-  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 16px; }
-  th, td { text-align: left; padding: 9px 12px 9px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
-  th { color: var(--muted); font-weight: 600; font-size: 14px; }
-  blockquote {
-    margin: 22px 0; padding: 4px 0 4px 20px;
-    border-left: 3px solid var(--brass); color: var(--ink); font-size: 19px;
+  .cta a.primary { background: var(--signal); border-color: var(--signal); color: var(--vault); font-weight: 600; }
+  .cta a:hover { border-color: var(--signal); }
+
+  .install { margin: 34px 0 0; padding: 16px 20px; background: var(--vault-raised); border-left: 3px solid var(--signal); font-size: 15px; overflow-x: auto; }
+  .install span { color: var(--signal); }
+
+  main { padding: 72px 32px 90px; }
+  section { margin-bottom: 76px; }
+  h2 { font-size: 30px; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 16px; }
+  h3 { font-size: 18px; font-weight: 600; margin: 30px 0 6px; }
+  p { margin: 0 0 16px; max-width: 70ch; }
+  a { color: ${THEME.alarmDeep}; }
+  .lede { font-size: 19px; color: var(--slate); max-width: 64ch; }
+
+  .rule-quote {
+    margin: 28px 0; padding: 22px 26px;
+    background: var(--paper-raised); border-left: 4px solid var(--signal);
+    font-size: 19px; line-height: 1.5; max-width: 66ch;
   }
-  footer { color: var(--muted); font-size: 15px; padding: 20px 0 70px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; max-width: 760px; }
+  th { text-align: left; font-size: 12px; font-weight: 600; color: var(--slate); padding: 0 16px 10px 0; border-bottom: 1px solid var(--paper-line); }
+  td { padding: 13px 16px 13px 0; border-bottom: 1px solid var(--paper-line); }
+  .chip { display: inline-block; padding: 3px 9px; font-size: 12px; font-weight: 600; color: #fff; }
+  .broken { background: var(--alarm); }
+  .weakened { background: var(--signal); color: var(--vault); }
+  .resistant { background: var(--live); color: var(--vault); }
+
+  .composition { max-width: 860px; margin: 26px 0 0; }
+  .composition svg { display: block; width: 100%; height: auto; }
+
+  pre { background: var(--paper-raised); border-left: 3px solid var(--paper-line); padding: 15px 18px; overflow-x: auto; font-size: 14px; max-width: 760px; }
+  p code, td code, li code { background: var(--paper-raised); border: 1px solid var(--paper-line); padding: 1px 5px; font-size: 0.9em; }
+
+  .waves { max-width: 760px; }
+  .wave-row { display: flex; align-items: baseline; padding: 13px 0; border-bottom: 1px solid var(--paper-line); }
+  .wave-n { width: 34px; color: var(--signal); font-weight: 600; }
+  .wave-name { flex: 1; }
+  .wave-when { color: var(--slate); font-size: 14px; }
+
+  footer { background: var(--vault); color: var(--on-vault-dim); padding: 34px 32px; font-size: 14px; }
+  footer a { color: var(--signal); }
+
   @media (max-width: 620px) {
-    h1 { font-size: 34px; }
-    header { padding-top: 52px; }
-    body { font-size: 16px; }
+    .vault { padding: 0 18px 40px; }
+    main { padding: 48px 18px 64px; }
+    h2 { font-size: 25px; }
+    .bar nav a { margin-left: 0; margin-right: 18px; }
   }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-<header>
-  <h1>Miftah <span class="arabic">مفتاح</span></h1>
-  <p class="tagline">Cryptographic inventory and post quantum readiness. Reads your code, your certificates and your live endpoints, then tells you what a quantum computer breaks and in what order to fix it.</p>
-  <div class="cta">
-    <a class="primary" href="console.html">Open the console</a>
-    <a href="https://github.com/SiteQ8/miftah">Source on GitHub</a>
-    <a href="sample-report-en.html">Sample report</a>
+<div class="vault">
+  <div class="inner">
+    <header class="bar">
+      <div class="brand">
+        <span class="wordmark">miftah</span>
+        <span class="wordmark-ar" lang="ar" dir="rtl">مفتاح</span>
+      </div>
+      <nav>
+        <a href="console.html">Console</a>
+        <a href="sample-report-en.html">Sample report</a>
+        <a href="https://github.com/SiteQ8/miftah">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="readout">
+      <span class="huge">${mosca.deficit}</span>
+      <span class="huge-unit">years your traffic is readable<br>before it stops mattering</span>
+    </div>
+
+    <p class="claim">That is what ten years of required secrecy and a five year migration cost you against a 2033 horizon.</p>
+
+    <figure class="hero-figure">${hero}</figure>
+    <p class="hero-note">Recorded today, decrypted later. The amber span is not a risk in the abstract, it is the stretch of calendar during which traffic captured now can be read.</p>
+
+    <div class="cta">
+      <a class="primary" href="console.html">Open the console</a>
+      <a href="sample-report-en.html">Read a sample report</a>
+      <a href="https://github.com/SiteQ8/miftah">Source</a>
+    </div>
+
+    <div class="install"><span>npx</span> github:SiteQ8/miftah scan .</div>
   </div>
-</header>
-
-<pre>npx github:SiteQ8/miftah scan .</pre>
-
-<hr class="rule">
-
-<h2>The argument</h2>
-<p>Advice about quantum computers is usually a date argument, and dates are easy to dismiss. Mosca's inequality turns it into arithmetic:</p>
-
-<blockquote>If <strong>x</strong>, the years your data must stay secret, plus <strong>y</strong>, the years your migration takes, is greater than <strong>z</strong>, the years until a capable quantum computer exists, then you are already late.</blockquote>
-
-<p>You do not get to start migrating when the machine is announced. You had to have finished by then, and the traffic you encrypted years earlier is already sitting in somebody's archive waiting for it. That is harvest now, decrypt later, and it is why the inventory is worth building today rather than in 2031.</p>
-
-<figure>
-${hero}
-<figcaption>Ten years of required secrecy plus a five year migration against a 2033 horizon. The shaded region is the part of your secrecy requirement that the horizon eats. Change any of the three numbers in the console and the picture changes with it.</figcaption>
-</figure>
-
-<hr class="rule">
-
-<h2>Two verdicts, never one</h2>
-<p>Every algorithm gets judged twice, because collapsing the two is how inventories end up misleading:</p>
-
-<table>
-<tr><th>Algorithm</th><th>Classically</th><th>Against a quantum computer</th></tr>
-<tr><td>RSA-4096</td><td class="resistant">strong</td><td class="broken">broken</td></tr>
-<tr><td>SHA-256</td><td class="resistant">strong</td><td class="weakened">weakened</td></tr>
-<tr><td>AES-256</td><td class="resistant">strong</td><td class="resistant">resistant</td></tr>
-<tr><td>MD5</td><td class="broken">broken</td><td class="broken">broken</td></tr>
-</table>
-
-<p>RSA-4096 is not a weak key, it is a doomed scheme. SHA-256 loses half its bits to Grover and still has 128 left, which is usually fine. MD5 does not need a quantum computer to hurt anyone, and that distinction is what wave 0 of the roadmap is built on.</p>
-
-<hr class="rule">
-
-<h2>What a scan looks like</h2>
-<p>Run against the sample estate in the repository:</p>
-
-<div class="stats">
-  <div><div class="stat-value">${estate.readiness}</div><div class="stat-label">readiness out of 100</div></div>
-  <div><div class="stat-value broken">${counts.quantumBroken}</div><div class="stat-label">quantum broken</div></div>
-  <div><div class="stat-value weakened">${counts.quantumWeakened}</div><div class="stat-label">weakened</div></div>
-  <div><div class="stat-value resistant">${counts.quantumResistant}</div><div class="stat-label">resistant</div></div>
-  <div><div class="stat-value broken">${mosca.deficit}</div><div class="stat-label">years exposed</div></div>
 </div>
 
-<figure>
-${compositionBar(counts, { width: 860 })}
-<figcaption>The estate by quantum verdict. ${scan.findings.length} findings across ${scan.filesRead} files, reduced to ${scan.assets.length} distinct cryptographic assets.</figcaption>
-</figure>
+<main class="inner">
 
-<p><a href="sample-report-en.html">Read the full report</a>, or <a href="sample-report-ar.html">the same report in Arabic</a> with a mirrored timeline. The machine readable inventory is <a href="sample-cbom.json">here</a>.</p>
+<section>
+  <h2>Dates are easy to dismiss. Arithmetic is not.</h2>
+  <p class="lede">Nobody knows when a cryptographically relevant quantum computer arrives, so any argument that rests on the date loses. Mosca's inequality does not rest on the date.</p>
 
-<hr class="rule">
+  <div class="rule-quote">If the years your data must stay secret, plus the years your migration takes, exceed the years until the machine exists, you are already late.</div>
 
-<h2>A CBOM you can actually use</h2>
-<p>The inventory is written as <strong>CycloneDX 1.6</strong>, validated against the published schema, with every asset typed <code>cryptographic-asset</code> and carrying its registered OID, its CycloneDX primitive, its NIST security level where one applies, and <code>evidence.occurrences</code> pointing back at the file and line it came from.</p>
-<p>It is a standard format on purpose. A cryptographic inventory that only one tool can read is another silo, and the point is to plug into the SBOM pipeline you already run.</p>
+  <p>You do not get to start migrating when it is announced. You had to have finished by then, and the traffic you encrypted years earlier is already sitting in somebody's archive waiting for it. Move the horizon out five years and the arithmetic still bites, which is the point: the conclusion survives disagreement about the date.</p>
+</section>
 
-<pre>miftah scan . --cbom cbom.json --fail-on high</pre>
+<section>
+  <h2>Two verdicts, never one</h2>
+  <p>Every algorithm is judged twice. Collapsing the two is how inventories end up misleading the people who read them.</p>
 
-<hr class="rule">
+  <table>
+    <tr><th>Algorithm</th><th>Classically</th><th>Against a quantum computer</th></tr>
+    <tr><td>RSA-4096</td><td>strong</td><td><span class="chip broken">broken</span></td></tr>
+    <tr><td>SHA-256</td><td>strong</td><td><span class="chip weakened">weakened</span></td></tr>
+    <tr><td>AES-256</td><td>strong</td><td><span class="chip resistant">resistant</span></td></tr>
+    <tr><td>MD5</td><td>broken</td><td><span class="chip broken">broken</span></td></tr>
+  </table>
 
-<h2>What it looks at</h2>
+  <p>RSA-4096 is not a weak key, it is a doomed scheme. SHA-256 loses half its bits to Grover and still has 128 left, which is usually fine. MD5 needs no quantum computer to hurt anyone, and that last distinction is what the first wave of the roadmap is built on.</p>
+</section>
 
-<h3>Code and configuration</h3>
-<p>Thirty rules covering broken hashes, legacy ciphers, ECB mode, undersized RSA and DH, static initialisation vectors, hard coded keys, weak randomness in a cryptographic context, low PBKDF2 iteration counts, deprecated TLS versions and disabled certificate verification. Post quantum algorithms are detected too, so the inventory records what is already right rather than only what is wrong.</p>
+<section>
+  <h2>What a scan says</h2>
+  <p>Run against the sample estate in the repository: ${scan.findings.length} findings across ${scan.filesRead} files, reduced to ${scan.assets.length} distinct cryptographic assets.</p>
 
-<h3>Certificates</h3>
-<p>Signature algorithm read straight out of the DER, public key type, size and curve, and expiry. Graded on all three, worst one wins.</p>
+  <figure class="composition">${compositionBar(counts, { width: 860 })}</figure>
 
-<h3>The wire</h3>
-<p>TLS is probed once per protocol version from 1.0 to 1.3, capturing the negotiated suite, the key exchange group and the chain. SSH is spoken at the transport layer to read the server KEXINIT, which judges key exchange, host key, cipher and MAC algorithms, and reports whether any post quantum key exchange is offered at all.</p>
+  <table>
+    <tr><th>Asset</th><th>Risk</th><th>Replace with</th></tr>
+    ${worst.map((a) => `<tr><td>${a.name}</td><td>${a.score}</td><td>${a.replacement || 'review by hand'}</td></tr>`).join('\n    ')}
+  </table>
 
-<hr class="rule">
+  <p><a href="sample-report-en.html">Read the full report</a>, or <a href="sample-report-ar.html">the same report in Arabic</a> with a mirrored timeline. The machine readable inventory is <a href="sample-cbom.json">here</a>.</p>
+</section>
 
-<h2>The roadmap</h2>
-<p>Findings sort into five waves, because doing this in the wrong order is how the budget disappears.</p>
+<section>
+  <h2>A CBOM that plugs into what you already run</h2>
+  <p>The inventory is written as CycloneDX 1.6 and validated against the published schema. Every asset is typed <code>cryptographic-asset</code> and carries its registered OID, its CycloneDX primitive, its NIST security level where one applies, and <code>evidence.occurrences</code> pointing back at the file and line it came from.</p>
+  <p>Standard format on purpose. A cryptographic inventory only one tool can read is just another silo.</p>
+  <pre>miftah scan . --cbom cbom.json --fail-on high</pre>
+</section>
 
-<table>
-<tr><th>Wave</th><th></th><th>When</th></tr>
-<tr><td>0</td><td>Stop the bleeding</td><td>now</td></tr>
-<tr><td>1</td><td>Know and govern</td><td>0 to 6 months</td></tr>
-<tr><td>2</td><td>Protect traffic in flight</td><td>3 to 12 months</td></tr>
-<tr><td>3</td><td>Protect data at rest</td><td>9 to 24 months</td></tr>
-<tr><td>4</td><td>Re root identity and signing</td><td>18 to 36 months</td></tr>
-</table>
+<section>
+  <h2>What it looks at</h2>
+  <h3>Code and configuration</h3>
+  <p>Thirty rules covering broken hashes, legacy ciphers, ECB mode, undersized RSA and DH, static initialisation vectors, embedded keys, weak randomness in a cryptographic context, low PBKDF2 iteration counts, deprecated TLS and disabled certificate verification. Post quantum algorithms are detected too, so the inventory records what is already right rather than only what is wrong.</p>
+  <h3>Certificates</h3>
+  <p>Signature algorithm read straight out of the DER, public key type, size and curve, and expiry. Graded on all three, worst one wins.</p>
+  <h3>The wire</h3>
+  <p>TLS probed once per protocol version from 1.0 to 1.3, capturing the negotiated suite, the key exchange group and the chain. SSH spoken at the transport layer to read the server KEXINIT, judging key exchange, host key, cipher and MAC, and reporting whether any post quantum key exchange is offered at all.</p>
+</section>
 
-<p>Traffic comes before signatures deliberately. Recorded sessions are being harvested today, whereas a forged signature requires the machine to already exist.</p>
+<section>
+  <h2>Five waves, in this order</h2>
+  <p>Doing this in the wrong order is how the budget disappears before the risk does.</p>
+  <div class="waves">
+    <div class="wave-row"><span class="wave-n">0</span><span class="wave-name">Stop the bleeding</span><span class="wave-when">now</span></div>
+    <div class="wave-row"><span class="wave-n">1</span><span class="wave-name">Know and govern</span><span class="wave-when">0 to 6 months</span></div>
+    <div class="wave-row"><span class="wave-n">2</span><span class="wave-name">Protect traffic in flight</span><span class="wave-when">3 to 12 months</span></div>
+    <div class="wave-row"><span class="wave-n">3</span><span class="wave-name">Protect data at rest</span><span class="wave-when">9 to 24 months</span></div>
+    <div class="wave-row"><span class="wave-n">4</span><span class="wave-name">Re root identity and signing</span><span class="wave-when">18 to 36 months</span></div>
+  </div>
+  <p>Traffic before signatures, deliberately. Recorded sessions are being harvested today, whereas a forged signature needs the machine to already exist.</p>
+</section>
 
-<hr class="rule">
+<section>
+  <h2>Argue with the assumptions</h2>
+  <p>The 2033 horizon is an assumption, not a prediction, which is why the console puts it on a slider instead of in a box. NIST IR 8547 sets 2030 for deprecating classical public key cryptography and 2035 for disallowing it; those are policy anchors, not physics.</p>
+  <pre>miftah scan . --shelf-life 25 --migration 7 --horizon 2035 --exposure internal</pre>
+  <p>Medical records and legal archives justify a long shelf life. A session token justifies almost none. <code>--exposure airgapped</code> lowers the score but never to zero.</p>
+</section>
 
-<h2>Assumptions, drawn so you can argue with them</h2>
-<p>The 2033 horizon is an assumption, not a prediction, which is why it is a dashed line rather than a number in a box. NIST IR 8547 sets 2030 for deprecating classical public key cryptography and 2035 for disallowing it; Miftah treats those as policy anchors rather than physics.</p>
+<section>
+  <h2>Zero dependencies</h2>
+  <p>Node built-ins only: <code>fs</code>, <code>net</code>, <code>tls</code>, <code>crypto</code>. Nothing is uploaded, nothing is phoned home, and the console is a single HTML file that works with the network unplugged. A tool you point at your private keys should not arrive with a dependency tree.</p>
+</section>
 
-<pre>miftah scan . --shelf-life 25 --migration 7 --horizon 2035 --exposure internal</pre>
-
-<p>Medical records and legal archives justify a long shelf life. A session token justifies almost none. <code>--exposure airgapped</code> lowers the score but never to zero.</p>
-
-<hr class="rule">
-
-<h2>Zero dependencies</h2>
-<p>Node built-ins only: <code>fs</code>, <code>net</code>, <code>tls</code>, <code>crypto</code>. Nothing is uploaded, nothing is phoned home, and the console is a single HTML file that works offline. A tool that reads your private keys should not have a dependency tree.</p>
-
-<hr class="rule">
+</main>
 
 <footer>
-  Miftah v${VERSION}. MIT licensed. Built by <a href="https://github.com/SiteQ8">Ali</a>.
+  <div class="inner">Miftah v${VERSION}. MIT licensed. Built by <a href="https://github.com/SiteQ8">Ali</a>.</div>
 </footer>
 
-</div>
 </body>
 </html>
 `;
