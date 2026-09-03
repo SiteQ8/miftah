@@ -165,6 +165,51 @@ export function certificateComponent(cert, index = 0) {
   };
 }
 
+// Package URLs, so a component here matches the same component in whatever SBOM
+// the team already produces. Without one, an inventory that names a library is
+// a string rather than a reference.
+const PURL_TYPE = {
+  npm: 'npm', pypi: 'pypi', go: 'golang', maven: 'maven',
+  rubygems: 'gem', cargo: 'cargo', composer: 'composer', nuget: 'nuget'
+};
+
+function cleanVersion(version) {
+  const match = String(version || '').match(/\d+(?:\.\d+)*(?:[.-][A-Za-z0-9]+)?/);
+  return match ? match[0] : '';
+}
+
+// A dependency is a library, not a cryptographic asset. Typing it correctly is
+// the difference between a bill of materials and a list of strings, and it lets
+// the cryptographic properties hang off the thing that actually provides them.
+function libraryComponent(dependency) {
+  const type = PURL_TYPE[dependency.ecosystem];
+  const version = cleanVersion(dependency.version);
+  const name = dependency.artifact ? `${dependency.name}/${dependency.artifact}` : dependency.name;
+  const purl = type ? `pkg:${type}/${name}${version ? `@${version}` : ''}` : undefined;
+
+  const component = {
+    type: 'library',
+    'bom-ref': `library/${dependency.ecosystem}/${name}${version ? `@${version}` : ''}`,
+    name: dependency.name,
+    scope: dependency.dev ? 'optional' : 'required',
+    properties: [
+      { name: 'miftah:ecosystem', value: dependency.ecosystem },
+      { name: 'miftah:provides', value: (dependency.provides || []).join(', ') },
+      { name: 'miftah:classical', value: String(dependency.classical) },
+      { name: 'miftah:quantum', value: String(dependency.quantum) },
+      { name: 'miftah:severity', value: String(dependency.severity) }
+    ]
+  };
+
+  if (version) component.version = version;
+  if (purl) component.purl = purl;
+  if (dependency.artifact) component.group = dependency.name;
+  if (dependency.manifest) {
+    component.evidence = { occurrences: [{ location: String(dependency.manifest) }] };
+  }
+  return component;
+}
+
 export function buildCbom(scan, options = {}) {
   const now = options.now || new Date();
   const serial = options.serialNumber || `urn:uuid:${crypto.randomUUID()}`;
@@ -175,6 +220,10 @@ export function buildCbom(scan, options = {}) {
     if (asset.materialType) components.push(materialComponent(asset));
     else if (asset.protocol && !asset.algorithm) components.push(protocolComponent(asset));
     else components.push(algorithmComponent(asset));
+  }
+
+  for (const dependency of scan.dependencies || []) {
+    components.push(libraryComponent(dependency));
   }
 
   for (const [index, cert] of (scan.certificates || []).entries()) {
@@ -240,8 +289,19 @@ export function validateCbom(bom) {
   if (!Array.isArray(bom.components)) errors.push('components must be an array');
 
   for (const component of bom.components || []) {
+    // A dependency is a library, and a library has no cryptoProperties. This
+    // assertion was right when the only components were cryptographic assets
+    // and became wrong the moment the CBOM started carrying dependencies.
+    if (component.type === 'library') {
+      if (!component.name) errors.push('a library component has no name');
+      if (component.purl && !/^pkg:[a-z]+\//.test(component.purl)) {
+        errors.push(`library ${component.name} has a malformed purl`);
+      }
+      continue;
+    }
+
     if (component.type !== 'cryptographic-asset') {
-      errors.push(`component ${component.name} must be a cryptographic-asset`);
+      errors.push(`component ${component.name} must be a cryptographic-asset or a library`);
     }
     const props = component.cryptoProperties;
     if (!props) {

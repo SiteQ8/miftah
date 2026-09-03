@@ -291,3 +291,99 @@ test('a registry value named TrustAllUsers is not a trust manager', async () => 
     .filter((f) => f.rule === 'MFT-L004');
   assert.equal(real.length, 1, 'a real trust all manager stopped being caught');
 });
+
+// ------------------------------------------------------------ dependencies
+
+test('every manifest format is parsed', async () => {
+  const { parseManifest } = await import('../src/deps.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'miftah-man-'));
+  const write = (name, body) => { fs.writeFileSync(path.join(dir, name), body); return path.join(dir, name); };
+
+  const cases = [
+    ['package.json', '{"dependencies":{"node-forge":"^1.3.1"}}', 'npm', 'node-forge'],
+    ['requirements.txt', 'pycrypto==2.6.1\nrequests\n', 'pypi', 'pycrypto'],
+    ['go.mod', 'module x\nrequire (\n\tgithub.com/cloudflare/circl v1.3.7\n)\n', 'go', 'github.com/cloudflare/circl'],
+    ['pom.xml', '<project><dependencies><dependency><groupId>org.bouncycastle</groupId><artifactId>bcprov-jdk18on</artifactId><version>1.77</version></dependency></dependencies></project>', 'maven', 'org.bouncycastle'],
+    ['Gemfile', "gem 'bcrypt'\n", 'rubygems', 'bcrypt'],
+    ['Cargo.toml', '[dependencies]\nring = "0.17"\n', 'cargo', 'ring'],
+    ['composer.json', '{"require":{"firebase/php-jwt":"^6.0"}}', 'composer', 'firebase/php-jwt'],
+    ['app.csproj', '<Project><PackageReference Include="BouncyCastle.Cryptography" Version="2.2.1" /></Project>', 'nuget', 'BouncyCastle.Cryptography']
+  ];
+
+  for (const [name, body, ecosystem, expected] of cases) {
+    const parsed = parseManifest(write(name, body));
+    assert.ok(parsed.some((d) => d.name === expected && d.ecosystem === ecosystem),
+      `${name} did not yield ${expected}`);
+  }
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('a manifest that will not parse is not a finding', async () => {
+  const { parseManifest } = await import('../src/deps.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'miftah-bad-'));
+  const file = path.join(dir, 'package.json');
+  fs.writeFileSync(file, '{ this is not json');
+  assert.deepEqual(parseManifest(file), [], 'a broken manifest threw or reported');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('abandoned crypto libraries are flagged and current ones are not', async () => {
+  const { evaluateDependencies } = await import('../src/deps.js');
+  const { findings } = evaluateDependencies([
+    { ecosystem: 'pypi', name: 'pycrypto', version: '2.6.1' },
+    { ecosystem: 'pypi', name: 'cryptography', version: '41.0' },
+    { ecosystem: 'go', name: 'github.com/dgrijalva/jwt-go', version: 'v3.2.0' },
+    { ecosystem: 'npm', name: 'express', version: '4.18.0' }
+  ]);
+  const bySeverity = new Map(findings.map((f) => [f.evidence.split(' ')[0], f.severity]));
+  assert.equal(bySeverity.get('pycrypto'), 'high', 'an unmaintained crypto library was not flagged');
+  assert.equal(bySeverity.get('github.com/dgrijalva/jwt-go'), 'high', 'a deprecated JWT library was not flagged');
+  assert.equal(bySeverity.get('cryptography'), 'info');
+  assert.ok(!bySeverity.has('express'), 'a library with no cryptography was reported');
+});
+
+test('post quantum libraries are recorded as good news', async () => {
+  const { evaluateDependencies } = await import('../src/deps.js');
+  const { dependencies } = evaluateDependencies([
+    { ecosystem: 'go', name: 'github.com/cloudflare/circl', version: 'v1.3.7' }
+  ]);
+  assert.equal(dependencies[0].quantum, 'resistant');
+  assert.equal(dependencies[0].severity, 'info');
+});
+
+test('a hierarchical package name matches its group', async () => {
+  const { evaluateDependencies } = await import('../src/deps.js');
+  const { dependencies } = evaluateDependencies([
+    { ecosystem: 'go', name: 'golang.org/x/crypto/ssh', version: 'v0.17.0' },
+    { ecosystem: 'maven', name: 'org.bouncycastle', artifact: 'bcprov-jdk18on', version: '1.77' }
+  ]);
+  assert.equal(dependencies.length, 2, 'a nested package path did not match its group');
+});
+
+test('dependencies become library components with a package URL', async () => {
+  const { buildCbom, validateCbom } = await import('../src/cbom.js');
+  const bom = buildCbom({
+    assets: [],
+    findings: [],
+    dependencies: [
+      { ecosystem: 'npm', name: 'node-forge', version: '^1.3.1', provides: ['RSA'], classical: 'strong', quantum: 'broken', severity: 'info', manifest: 'package.json' },
+      { ecosystem: 'maven', name: 'org.bouncycastle', artifact: 'bcprov-jdk18on', version: '1.77', provides: ['RSA'], classical: 'strong', quantum: 'broken', severity: 'info' }
+    ]
+  });
+  const libs = bom.components.filter((c) => c.type === 'library');
+  assert.equal(libs.length, 2);
+  assert.equal(libs[0].purl, 'pkg:npm/node-forge@1.3.1');
+  assert.equal(libs[1].purl, 'pkg:maven/org.bouncycastle/bcprov-jdk18on@1.77');
+  // A library has no cryptoProperties, and the validator used to insist on them.
+  assert.equal(validateCbom(bom).valid, true, validateCbom(bom).errors.join('; '));
+});
+
+test('a tree with no manifests reports no dependencies rather than failing', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'miftah-nodep-'));
+  fs.writeFileSync(path.join(dir, 'a.js'), "crypto.createHash('md5')");
+  const result = scanTree(dir);
+  assert.deepEqual(result.dependencies, []);
+  assert.equal(result.manifestsRead, 0);
+  assert.equal(result.findings.length, 1);
+  fs.rmSync(dir, { recursive: true, force: true });
+});

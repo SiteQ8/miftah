@@ -47,6 +47,12 @@ Each language is read in its own idioms, not in the JavaScript spelling of the s
 
 All four spellings of 3DES above resolve to one asset in the inventory. A scanner that reads nothing is worse than no scanner, because a clean report retires the question.
 
+**In your dependencies.** Cryptography is often not written in your code at all. Manifests are parsed structurally across eight ecosystems, so `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `pom.xml`, `build.gradle`, `Gemfile`, `Cargo.toml`, `composer.json` and `*.csproj` all contribute to the inventory. Each recognised library says what it provides and what that implies once a quantum computer exists.
+
+Deliberately not a vulnerability scanner. There is no CVE feed and nothing is fetched, because a tool you point at your private keys should not phone anywhere. What it does is name the libraries that provide cryptography, flag the few that are abandoned or have unsafe defaults, and record post quantum libraries as the good news they are.
+
+Dependencies appear in the CBOM as CycloneDX `library` components with a package URL, which is what turns a cryptographic inventory into an actual bill of materials.
+
 **In certificates.** Signature algorithm read from the DER, public key type and size, curve, and expiry. Graded on all three.
 
 **On the wire.** TLS probed once per protocol version from 1.0 to 1.3, capturing the negotiated suite, the key exchange group, and the full chain. SSH probed at the transport layer, reading the server KEXINIT to judge key exchange, host key, cipher and MAC algorithms, and to report whether any post quantum key exchange is offered at all.
@@ -211,7 +217,7 @@ cd miftah
 node --test "test/*.test.js"
 ```
 
-142 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
+149 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
 
 ---
 
