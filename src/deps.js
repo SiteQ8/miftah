@@ -308,3 +308,52 @@ export function scanDependencies(files) {
   }
   return Object.assign(evaluateDependencies(all), { manifests: files.filter(isManifest) });
 }
+
+// ---------------------------------------------------------------------------
+// Vendors.
+//
+// Most of an estate is bought rather than built, so the supplier's migration
+// schedule becomes yours. Nothing here can be scanned, which is exactly why it
+// has to be written down: a list of who has been asked and who has answered.
+// ---------------------------------------------------------------------------
+
+const VENDOR_STATUS = new Set(['committed', 'asked', 'unknown']);
+
+export function parseVendors(text, file = '') {
+  const trimmed = String(text).trim();
+
+  // JSON when it looks like JSON, otherwise one supplier per line so the file
+  // can be started in ten seconds and refined later.
+  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+    const parsed = JSON.parse(trimmed);
+    const list = Array.isArray(parsed) ? parsed : parsed.vendors || [];
+    return list.map((entry) => normaliseVendor(typeof entry === 'string' ? { name: entry } : entry, file));
+  }
+
+  return trimmed
+    .split(/\r?\n/)
+    .map((line) => line.split('#')[0].trim())
+    .filter(Boolean)
+    .map((line) => {
+      // name | status | target
+      const [name, status, target] = line.split('|').map((part) => part.trim());
+      return normaliseVendor({ name, status, target }, file);
+    });
+}
+
+function normaliseVendor(entry, file) {
+  const status = String(entry.status || '').toLowerCase();
+  return {
+    name: entry.name || entry.vendor || 'unnamed supplier',
+    product: entry.product || '',
+    status: VENDOR_STATUS.has(status) ? status : (entry.target ? 'committed' : 'unknown'),
+    target: entry.target || '',
+    asked: entry.asked || '',
+    note: entry.note || '',
+    source: file
+  };
+}
+
+export function readVendors(file) {
+  return parseVendors(fs.readFileSync(file, 'utf8'), file);
+}

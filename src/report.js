@@ -62,7 +62,7 @@ export function toMarkdown(model, locale = 'en') {
   out.push(`| ${L('alreadyResistant')} | ${estate.counts.quantumResistant} |`);
   out.push(`| ${L('findings')} | ${(scan.findings || []).length} |`);
   if (scan.filesScanned !== undefined) out.push(`| ${L('filesScanned')} | ${scan.filesScanned} |`);
-  out.push(`| ${L('agilityScore')} | ${agility.score} / 100 |`);
+  out.push(`| ${L('agilityScore')} | ${agility.score} / 100 ${L('acrossChecks', { scorable: agility.scorable, total: agility.results.length })} |`);
   out.push('');
   out.push(`${L('severity.critical')} ${severity.critical}, ${L('severity.high')} ${severity.high}, ${L('severity.medium')} ${severity.medium}, ${L('severity.low')} ${severity.low}, ${L('severity.info')} ${severity.info}.`);
   out.push('');
@@ -155,7 +155,7 @@ export function toMarkdown(model, locale = 'en') {
 
   out.push(`## ${L('sectionAgility')}`);
   out.push('');
-  out.push(`${L('agilityScore')}: ${agility.score} / 100`);
+  out.push(`${L('agilityScore')}: ${agility.score} / 100 ${L('acrossChecks', { scorable: agility.scorable, total: agility.results.length })}`);
   out.push('');
   out.push(`| ${L('colStatus')} | ${L('colCheck')} | ${L('colAdvice')} |`);
   out.push('| --- | --- | --- |');
@@ -406,7 +406,8 @@ ${styles(dir)}
 
   <section id="agility">
     <h2>${escapeHtml(L('sectionAgility'))}</h2>
-    <p class="agility-score">${escapeHtml(L('agilityScore'))} <strong>${agility.score}</strong> / 100</p>
+    <p class="agility-score">${escapeHtml(L('agilityScore'))} <strong>${agility.score}</strong> / 100
+      <span class="muted">${escapeHtml(L('acrossChecks', { scorable: agility.scorable, total: agility.results.length }))}</span></p>
     ${table([L('colStatus'), L('colCheck'), L('colAdvice')], agilityRows)}
   </section>
 

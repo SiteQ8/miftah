@@ -21,6 +21,7 @@ import {
   createBaseline, readBaseline, writeBaseline, applyBaseline, pruneBaseline, DEFAULT_BASELINE
 } from '../src/baseline.js';
 import { buildSarif, validateSarif } from '../src/sarif.js';
+import { readVendors } from '../src/deps.js';
 
 const COLOUR = process.stdout.isTTY && !process.env.NO_COLOR;
 const paint = (code, text) => (COLOUR ? `\u001b[${code}m${text}\u001b[0m` : text);
@@ -70,6 +71,7 @@ Options
   --fail-on <level>    Exit non zero at or above this severity
   --baseline <file>    Only fail on findings absent from this baseline
   --sarif <file>       Write SARIF 2.1.0 for code scanning
+  --vendors <file>     A supplier list, so bought cryptography is tracked too
   --exclude <dir>      Skip a directory, repeatable
   --strict             Do not downgrade findings in tests, fixtures or lists
   --no-ignore-file     Ignore .miftahignore
@@ -219,6 +221,11 @@ async function commandScan(options) {
     ignoreFile: options['no-ignore-file'] !== true
   });
   scan.version = VERSION;
+
+  if (options.vendors && options.vendors !== true) {
+    if (!fs.existsSync(options.vendors)) throw new Error(`No vendor list at ${options.vendors}`);
+    scan.vendors = readVendors(options.vendors);
+  }
 
   if (options.certs) {
     scan.certificates = inspectPath(options.certs);
@@ -522,7 +529,7 @@ async function commandChecklist(options) {
   if (options.quiet) return 0;
 
   const painter = { pass: green, fail: red, partial: amber, manual: dim };
-  process.stdout.write(`\n${bold('Crypto agility')}  ${dim(`${result.score}/100 across ${result.scorable} scorable checks`)}\n\n`);
+  process.stdout.write(`\n${bold('Crypto agility')}  ${dim(`${result.score}/100 across ${result.scorable} answerable checks of ${result.results.length}, ${result.results.length - result.scorable} need a person`)}\n\n`);
   for (const check of result.results) {
     process.stdout.write(`  ${painter[check.status](check.status.padEnd(8))} ${check.title}\n`);
     if (check.detail) process.stdout.write(`           ${dim(check.detail)}\n`);

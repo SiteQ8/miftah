@@ -216,7 +216,7 @@ li { margin-bottom: 5px; }
     <div class="figure"><span class="figure-value">15</span><span class="figure-label">Assets needing migration</span></div>
     <div class="figure"><span class="figure-value">21</span><span class="figure-label">Cryptographic assets</span></div>
     <div class="figure"><span class="figure-value">26</span><span class="figure-label">critical + high</span></div>
-    <div class="figure"><span class="figure-value">25</span><span class="figure-label">Agility score</span></div>
+    <div class="figure"><span class="figure-value">22</span><span class="figure-label">Agility score</span></div>
   </section>
 
   <section id="composition">
@@ -364,9 +364,10 @@ li { margin-bottom: 5px; }
 
   <section id="agility">
     <h2>Crypto agility</h2>
-    <p class="agility-score">Agility score <strong>25</strong> / 100</p>
+    <p class="agility-score">Agility score <strong>22</strong> / 100
+      <span class="muted">محسوبة على 9 بنود قابلة للتقييم من 14، أما البقية فتحتاج إلى حكم بشري</span></p>
     <table><thead><tr><th>Status</th><th>Check</th><th>Advice</th></tr></thead><tbody><tr><td><span class="status status-pass">in place</span></td><td><strong>A cryptographic inventory exists and is current</strong><span class="note">You cannot migrate what you cannot name. This is the item every other item rests on.</span></td><td>21 cryptographic assets identified</td></tr>
-<tr><td><span class="status status-manual">needs a human</span></td><td><strong>The inventory is machine readable and regenerated automatically</strong><span class="note">A CBOM in a spreadsheet is a snapshot. A CBOM in CI is a control.</span></td><td>Confirm miftah runs in the pipeline, not only by hand</td></tr>
+<tr><td><span class="status status-fail">missing</span></td><td><strong>The inventory is machine readable and regenerated automatically</strong><span class="note">A CBOM in a spreadsheet is a snapshot. A CBOM in CI is a control.</span></td><td>No pipeline configuration found, so the inventory is a snapshot</td></tr>
 <tr><td><span class="status status-fail">missing</span></td><td><strong>No broken primitive remains in the estate</strong><span class="note">MD5, SHA-1, DES, RC4 and ECB are failures today, independent of any quantum timeline.</span></td><td>11 occurrences of broken primitives</td></tr>
 <tr><td><span class="status status-fail">missing</span></td><td><strong>No key material is held in source or configuration</strong><span class="note">Agility means rotating a key without shipping code. A literal key makes rotation a release.</span></td><td>1 occurrences of embedded key material</td></tr>
 <tr><td><span class="status status-fail">missing</span></td><td><strong>Algorithm choices are configuration, not literals</strong><span class="note">If the cipher name is compiled in, the next migration costs a rebuild of every component.</span></td><td>24 percent of algorithm references sit in configuration, the rest are hard coded</td></tr>
@@ -375,7 +376,7 @@ li { margin-bottom: 5px; }
 <tr><td><span class="status status-manual">needs a human</span></td><td><strong>Certificates carry SHA-256 or stronger and expire inside 398 days</strong><span class="note">Short lifetimes are what make an algorithm change tractable at all.</span></td><td>No certificates inspected in this run</td></tr>
 <tr><td><span class="status status-fail">missing</span></td><td><strong>Randomness comes from a cryptographic source everywhere</strong><span class="note">A predictable nonce defeats a perfect cipher.</span></td><td>1 occurrences of weak randomness or static IVs</td></tr>
 <tr><td><span class="status status-fail">missing</span></td><td><strong>Transport refuses anything below TLS 1.2</strong><span class="note">Old versions carry the suites that no amount of key length can rescue.</span></td><td>1 occurrences permitting TLS 1.1 or below</td></tr>
-<tr><td><span class="status status-manual">needs a human</span></td><td><strong>A named owner is accountable for the migration</strong><span class="note">Every cryptographic migration that succeeded had one. Every one that stalled did not.</span></td><td>Name the owner and the review cadence</td></tr>
+<tr><td><span class="status status-manual">needs a human</span></td><td><strong>A named owner is accountable for the migration</strong><span class="note">Every cryptographic migration that succeeded had one. Every one that stalled did not.</span></td><td>No CODEOWNERS or security policy found. Name the owner and the review cadence</td></tr>
 <tr><td><span class="status status-manual">needs a human</span></td><td><strong>Suppliers have been asked for their post quantum timeline</strong><span class="note">Most of the estate is bought, not built. Their schedule becomes yours.</span></td><td>Supply a vendor list with --vendors to track this</td></tr>
 <tr><td><span class="status status-manual">needs a human</span></td><td><strong>A rollback path exists for every algorithm change</strong><span class="note">Hybrid modes exist precisely so a failed migration is survivable.</span></td><td>Confirm each change can be reversed without a release</td></tr>
 <tr><td><span class="status status-manual">needs a human</span></td><td><strong>Protocol changes have been tested against signature and key size growth</strong><span class="note">ML-DSA signatures and ML-KEM keys are larger. Buffers, MTUs and hardware limits are where migrations break.</span></td><td>Test with ML-DSA-65 sized artefacts before committing</td></tr></tbody></table>

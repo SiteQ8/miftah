@@ -3,7 +3,7 @@
 What cryptography do we run, and what breaks first.
 
 Target: `/home/claude/miftah/examples/sample-estate`
-Generated: 2026-09-03T12:08:11.509Z
+Generated: 2026-09-03T12:22:29.730Z
 
 ## Summary
 
@@ -16,7 +16,7 @@ Generated: 2026-09-03T12:08:11.509Z
 | Already quantum resistant | 3 |
 | Findings | 47 |
 | Files read | 7 |
-| Agility score | 25 / 100 |
+| Agility score | 22 / 100 محسوبة على 9 بنود قابلة للتقييم من 14، أما البقية فتحتاج إلى حكم بشري |
 
 critical 5, high 21, medium 6, low 3, info 12.
 
@@ -180,12 +180,12 @@ Move certificates, code signing and firmware roots of trust to ML-DSA or a hash 
 
 ## Crypto agility
 
-Agility score: 25 / 100
+Agility score: 22 / 100 محسوبة على 9 بنود قابلة للتقييم من 14، أما البقية فتحتاج إلى حكم بشري
 
 | Status | Check | Advice |
 | --- | --- | --- |
 | in place | A cryptographic inventory exists and is current | 21 cryptographic assets identified |
-| needs a human | The inventory is machine readable and regenerated automatically | Confirm miftah runs in the pipeline, not only by hand |
+| missing | The inventory is machine readable and regenerated automatically | No pipeline configuration found, so the inventory is a snapshot |
 | missing | No broken primitive remains in the estate | 11 occurrences of broken primitives |
 | missing | No key material is held in source or configuration | 1 occurrences of embedded key material |
 | missing | Algorithm choices are configuration, not literals | 24 percent of algorithm references sit in configuration, the rest are hard coded |
@@ -194,7 +194,7 @@ Agility score: 25 / 100
 | needs a human | Certificates carry SHA-256 or stronger and expire inside 398 days | No certificates inspected in this run |
 | missing | Randomness comes from a cryptographic source everywhere | 1 occurrences of weak randomness or static IVs |
 | missing | Transport refuses anything below TLS 1.2 | 1 occurrences permitting TLS 1.1 or below |
-| needs a human | A named owner is accountable for the migration | Name the owner and the review cadence |
+| needs a human | A named owner is accountable for the migration | No CODEOWNERS or security policy found. Name the owner and the review cadence |
 | needs a human | Suppliers have been asked for their post quantum timeline | Supply a vendor list with --vendors to track this |
 | needs a human | A rollback path exists for every algorithm change | Confirm each change can be reversed without a release |
 | needs a human | Protocol changes have been tested against signature and key size growth | Test with ML-DSA-65 sized artefacts before committing |

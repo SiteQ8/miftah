@@ -195,6 +195,17 @@ Wave 0 is deliberately not about quantum computers. MD5 and RC4 do not need one.
 
 ## Crypto agility
 
+Ten of fourteen checks are answered from the tree: whether a pipeline generates the inventory, whether certificates are sound and short lived, whether ownership is recorded, and whether suppliers have been asked. The score says how many it could answer, because a number computed over ten questions and presented as if it answered fourteen is the tool claiming more than it measures.
+
+`--vendors suppliers.txt` covers the part that cannot be scanned. Most of an estate is bought rather than built, so the supplier's schedule becomes yours:
+
+```
+# name | status | target
+Acme HSM            | committed | 2027
+Regional CA         | asked
+Core banking vendor | unknown
+```
+
 Fourteen checks on whether the next migration will be cheaper than this one: is the algorithm behind configuration or a literal, is there a rotation path, is the key material addressable, is there an inventory in CI. Scored separately from the risk, because an estate can be sound today and still be impossible to change.
 
 ---
@@ -217,7 +228,7 @@ cd miftah
 node --test "test/*.test.js"
 ```
 
-149 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
+155 tests. The probe tests spin up local TLS and SSH servers and generate real certificates with openssl rather than asserting against fixtures. The console tests execute the page in jsdom and compare its scoring to the Node implementation.
 
 ---
 

@@ -28,6 +28,8 @@ export const STRINGS = {
     marginYears: 'years of margin',
     sectionDependencies: 'Cryptographic dependencies',
     dependenciesExplain: 'Cryptography is often not written in your code at all. These are the libraries in your manifests that provide it, and what each one implies once a quantum computer exists.',
+    acrossChecks: 'across {scorable} answerable checks of {total}, the rest need a person',
+    acrossChecks: 'محسوبة على {scorable} بنود قابلة للتقييم من {total}، أما البقية فتحتاج إلى حكم بشري',
     colLibrary: 'Library',
     colEcosystem: 'Ecosystem',
     colVersion: 'Version',
