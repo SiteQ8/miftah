@@ -15,4 +15,4 @@ export { horizonStrip, compositionBar, PALETTE } from './timeline.js';
 export { buildConsole } from './console.js';
 export { t, STRINGS, LOCALES } from './i18n.js';
 
-export const VERSION = '0.1.0';
+export { VERSION } from './version.js';

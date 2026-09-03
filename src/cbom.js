@@ -4,6 +4,7 @@
 
 import crypto from 'node:crypto';
 import { lookup } from './catalog.js';
+import { VERSION } from './version.js';
 
 export const SPEC_VERSION = '1.6';
 
@@ -197,7 +198,7 @@ export function buildCbom(scan, options = {}) {
           {
             type: 'application',
             name: 'miftah',
-            version: options.version || '0.1.0',
+            version: options.version || VERSION,
             author: 'SiteQ8',
             description: 'Cryptographic inventory and post-quantum readiness'
           }

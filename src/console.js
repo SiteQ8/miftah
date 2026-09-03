@@ -7,6 +7,7 @@
 // runs in file:// context and in a headless DOM without a server.
 
 import { PALETTE } from './timeline.js';
+import { VERSION } from './version.js';
 
 function escapeHtml(text) {
   return String(text ?? '')
@@ -18,7 +19,7 @@ function escapeHtml(text) {
 
 export function buildConsole(scan = null, options = {}) {
   const seeded = scan ? JSON.stringify(scan) : 'null';
-  const version = options.version || '0.1.0';
+  const version = options.version || VERSION;
 
   return `<!doctype html>
 <html lang="en" dir="ltr">
@@ -302,7 +303,7 @@ function renderInventory(estate) {
       + '<td>' + esc(asset.primitive) + '</td>'
       + '<td>' + esc(asset.classical) + '</td>'
       + '<td><span class="chip" style="background:' + chipColour + '">' + esc(asset.quantum) + '</span></td>'
-      + '<td class="num"><span class="score" style="--fill:' + score.score + '%">' + score.score + '</span></td>'
+      + '<td class="num"><span class="score" style="background-image:linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) ' + score.score + '%, transparent ' + score.score + '%)">' + score.score + '</span></td>'
       + '<td class="num">' + (asset.occurrences ? asset.occurrences.length : 0) + '</td>'
       + '<td>' + esc(asset.replacement || '') + '</td>'
       + '</tr>';
@@ -602,7 +603,7 @@ tbody tr:hover { background: rgba(168,121,28,0.06); }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; background: rgba(28,39,51,0.05); padding: 1px 5px; border-radius: 3px; }
 .note { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
 .chip { display: inline-block; padding: 2px 9px; border-radius: 2px; font-size: 12px; color: #fff; white-space: nowrap; }
-.score { display: inline-block; width: 62px; padding: 2px 8px; text-align: right; font-variant-numeric: tabular-nums; background-color: rgba(168,52,31,0.06); background-image: linear-gradient(to right, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) var(--fill, 0%), transparent var(--fill, 0%)); }
+.score { display: inline-block; width: 62px; padding: 2px 8px; text-align: right; font-variant-numeric: tabular-nums; background-color: rgba(168,52,31,0.06); }
 .empty { color: var(--muted); font-style: italic; }
 .wave { margin-top: 26px; }
 .wave h3 { display: flex; align-items: baseline; gap: 12px; font-size: 18px; margin: 0 0 6px; font-weight: 600; }

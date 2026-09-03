@@ -186,3 +186,48 @@ test('excluded directories are never entered', () => {
   assert.equal(scan.findings.filter((f) => f.rule === 'MFT-H001').length, 0);
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+// The rule originally anchored the keyword to the start of the identifier and
+// restricted the value to alphanumerics, which missed API_SECRET, db_password
+// and every password containing punctuation. These are the spellings that
+// actually appear in source, so they are pinned here.
+test('embedded secrets are caught across the spellings people really use', () => {
+  const caught = [
+    'const API_SECRET = "NOT_A_REAL_TOKEN_0000000000000000";',
+    'JWT_SECRET="hunter2hunter2hunter2hunter2"',
+    'db_password: "S3cur3P@ssw0rdLong123"',
+    'const stripeApiKey = "NOT_A_REAL_TOKEN_1111111111";',
+    'const MASTER_KEY = "0123456789abcdef0123456789abcdef";',
+    'signing_key = "aB3!kQ9#zX2$mN7&pL4%"',
+    'ENCRYPTION_KEY = "aVeryLongEncryptionKeyValue123"'
+  ];
+  for (const line of caught) {
+    const findings = scanText(line, 'a.js').filter((f) => f.rule === 'MFT-K001');
+    assert.equal(findings.length, 1, `missed an embedded secret: ${line}`);
+  }
+});
+
+test('things that merely look like secrets are left alone', () => {
+  const clean = [
+    'const apiKey = process.env.API_KEY;',
+    'signing_key: "${SIGNING_KEY}"',
+    'password: "changeme"',
+    'const publicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A";',
+    'api_key_url = "https://api.example.com/v1/keys"',
+    'password_hint = "the name of your first pet"',
+    'const PASSWORD_MIN_MESSAGE = "Password must be 12 characters";',
+    'aes_key = "your-key-here-placeholder"'
+  ];
+  for (const line of clean) {
+    const findings = scanText(line, 'a.js').filter((f) => f.rule === 'MFT-K001');
+    assert.equal(findings.length, 0, `false positive on: ${line}`);
+  }
+});
+
+test('a caught secret is never echoed back in full', () => {
+  const secret = 'NOT_A_REAL_TOKEN_0000000000000000';
+  const [finding] = scanText(`const API_SECRET = "${secret}";`, 'a.js').filter((f) => f.rule === 'MFT-K001');
+  assert.ok(finding);
+  assert.ok(!finding.evidence.includes(secret), 'the secret survived into the evidence');
+  assert.ok(!JSON.stringify(finding).includes(secret), 'the secret survived somewhere in the finding');
+});

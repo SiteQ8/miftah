@@ -230,7 +230,7 @@ export function toHtml(model, locale = 'en') {
       escapeHtml(asset.primitive),
       escapeHtml(L(`classical.${asset.classical}`)),
       severityChip(L(`quantum.${asset.quantum}`), asset.quantum === 'broken' ? 'critical' : asset.quantum === 'weakened' ? 'medium' : 'info'),
-      `<span class="score" style="--fill:${score.score}%">${score.score}</span>`,
+      `<span class="score" style="background-image:linear-gradient(to ${dir === 'rtl' ? 'left' : 'right'}, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) ${score.score}%, transparent ${score.score}%)">${score.score}</span>`,
       String(asset.occurrences.length),
       escapeHtml(asset.replacement || '')
     ];
@@ -428,7 +428,7 @@ tbody tr:hover { background: rgba(168,121,28,0.06); }
 .note { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
 
 .chip { display: inline-block; padding: 2px 9px; border-radius: 2px; font-size: 12px; color: #fff; background: var(--chip); white-space: nowrap; }
-.score { display: inline-block; width: 62px; padding: 2px 8px; text-align: ${dir === 'rtl' ? 'left' : 'right'}; font-variant-numeric: tabular-nums; background-color: rgba(168,52,31,0.06); background-image: linear-gradient(to ${dir === 'rtl' ? 'left' : 'right'}, rgba(168,52,31,0.24) 0%, rgba(168,52,31,0.24) var(--fill, 0%), transparent var(--fill, 0%)); }
+.score { display: inline-block; width: 62px; padding: 2px 8px; text-align: ${dir === 'rtl' ? 'left' : 'right'}; font-variant-numeric: tabular-nums; background-color: rgba(168,52,31,0.06); }
 .status { display: inline-block; padding: 2px 9px; border-radius: 2px; font-size: 12px; white-space: nowrap; }
 .status-pass { background: rgba(47,107,94,0.16); color: var(--resistant); }
 .status-fail { background: rgba(168,52,31,0.14); color: var(--broken); }

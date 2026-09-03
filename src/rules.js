@@ -21,6 +21,8 @@ function tok(source, flags = 'i') {
   return new RegExp(`(?<![A-Za-z0-9_])(?:${source})(?![A-Za-z0-9_])`, flags);
 }
 
+const SECRET_REJECT = /(process\.env|os\.environ|getenv|System\.getenv|ENV\[|\$\{|\{\{|<[a-z_]+>|xxxx|changeme|placeholder|example|your[-_]?key|dummy|sample|redacted|FIXME|TODO|https?:\/\/|BEGIN [A-Z ]*PRIVATE KEY)/i;
+
 const PLACEHOLDER = /(process\.env|os\.environ|getenv|System\.getenv|ENV\[|\$\{|\{\{|<[a-z_]+>|xxxx|changeme|placeholder|example|your[-_]?key|dummy|sample|redacted|FIXME|TODO)/i;
 
 export const RULES = [
@@ -302,13 +304,16 @@ export const RULES = [
     id: 'MFT-K001',
     title: 'Hard coded secret',
     algorithm: null,
-    pattern: /(?<![A-Za-z0-9_])(?:secret|api_?key|private_?key|passwd|password|passphrase|aes_?key|hmac_?key|signing_?key|encryption_?key|master_?key)[A-Za-z0-9_]*\s*[:=]\s*["'`]([A-Za-z0-9+/=_.-]{16,})["'`]/i,
+    // The keyword is matched anywhere inside the identifier, because the common
+    // real spellings are API_SECRET, JWT_SECRET, db_password and stripeApiKey,
+    // none of which begin with the keyword.
+    pattern: /[A-Za-z0-9_]{0,40}(?:secret|api_?key|private_?key|passwd|password|passphrase|aes_?key|hmac_?key|signing_?key|encryption_?key|master_?key|auth_?token|access_?token)[A-Za-z0-9_]*\s*[:=]\s*["'`]([^\s"'`]{16,})["'`]/i,
     severity: 'critical',
     classical: CLASSICAL.BROKEN,
     quantum: QUANTUM.UNKNOWN,
     materialType: 'secret-key',
     assetLabel: 'Embedded secret key material',
-    reject: PLACEHOLDER,
+    reject: SECRET_REJECT,
     advice: 'Move to a KMS or an HSM and rotate the exposed value. A key in source is a key in every clone.'
   },
   {
