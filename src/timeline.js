@@ -10,7 +10,7 @@
 // shaded behind glass, because that segment is not "at risk" in the abstract, it
 // is the specific span during which recorded traffic becomes readable.
 
-import { THEME, SANS, SANS_AR } from './theme.js';
+import { THEME, SANS, SANS_AR, readableOn } from './theme.js';
 
 export const PALETTE = {
   ink: THEME.ink,
@@ -36,16 +36,20 @@ function escapeText(text) {
     .replace(/"/g, '&quot;');
 }
 
-const SURFACE = {
+function band(fill) {
+  return { fill, text: readableOn(fill) };
+}
+
+export const SURFACE = {
   dark: {
     axis: THEME.vaultLine,
     axisText: THEME.onVaultDim,
-    migration: THEME.steel,
-    migrationText: THEME.onVault,
-    secrecy: '#2C5A70',
-    secrecyText: THEME.onVault,
-    exposed: THEME.signal,
-    exposedText: '#0B1A24',
+    migration: band(THEME.steel).fill,
+    migrationText: band(THEME.steel).text,
+    secrecy: band(THEME.steelDeep).fill,
+    secrecyText: band(THEME.steelDeep).text,
+    exposed: band(THEME.signal).fill,
+    exposedText: band(THEME.signal).text,
     horizon: THEME.signal,
     horizonText: THEME.signal,
     label: THEME.onVaultDim
@@ -53,12 +57,12 @@ const SURFACE = {
   light: {
     axis: THEME.paperLine,
     axisText: THEME.slate,
-    migration: '#9DB2BD',
-    migrationText: '#0B1A24',
-    secrecy: THEME.steel,
-    secrecyText: '#FFFFFF',
-    exposed: THEME.alarm,
-    exposedText: '#FFFFFF',
+    migration: band(THEME.steelDim).fill,
+    migrationText: band(THEME.steelDim).text,
+    secrecy: band(THEME.steel).fill,
+    secrecyText: band(THEME.steel).text,
+    exposed: band(THEME.alarm).fill,
+    exposedText: band(THEME.alarm).text,
     horizon: THEME.alarmDeep,
     horizonText: THEME.alarmDeep,
     label: THEME.slate
@@ -191,9 +195,9 @@ export function compositionBar(counts, options = {}) {
   const labels = options.labels || {};
 
   const segments = [
-    { label: labels.broken || 'broken', value: counts.quantumBroken || 0, fill: THEME.alarm, text: '#FFFFFF' },
-    { label: labels.weakened || 'weakened', value: counts.quantumWeakened || 0, fill: THEME.signal, text: '#0B1A24' },
-    { label: labels.resistant || 'resistant', value: counts.quantumResistant || 0, fill: THEME.live, text: '#0B1A24' }
+    { label: labels.broken || 'broken', value: counts.quantumBroken || 0, fill: THEME.alarm, text: readableOn(THEME.alarm) },
+    { label: labels.weakened || 'weakened', value: counts.quantumWeakened || 0, fill: THEME.signal, text: readableOn(THEME.signal) },
+    { label: labels.resistant || 'resistant', value: counts.quantumResistant || 0, fill: THEME.live, text: readableOn(THEME.live) }
   ].filter((segment) => segment.value > 0);
 
   const total = segments.reduce((sum, segment) => sum + segment.value, 0) || 1;
@@ -202,13 +206,17 @@ export function compositionBar(counts, options = {}) {
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" role="img" preserveAspectRatio="xMidYMid meet" aria-label="estate composition">`
   ];
 
+  const dirAttr = rtl ? ' direction="rtl" unicode-bidi="isolate"' : '';
+  const leadingEdge = (cursor, segmentWidth) => (rtl ? width - cursor - segmentWidth : cursor);
+
   let cursor = 0;
   for (const segment of segments) {
     const segmentWidth = (segment.value / total) * width;
-    parts.push(`<rect x="${cursor.toFixed(1)}" y="0" width="${segmentWidth.toFixed(1)}" height="${barH}" fill="${segment.fill}"/>`);
+    const x = leadingEdge(cursor, segmentWidth);
+    parts.push(`<rect x="${x.toFixed(1)}" y="0" width="${segmentWidth.toFixed(1)}" height="${barH}" fill="${segment.fill}"/>`);
     if (segmentWidth > 42) {
       parts.push(
-        `<text x="${(cursor + segmentWidth / 2).toFixed(1)}" y="${barH / 2 + 5}" font-family="${font}" font-size="13" font-weight="600" fill="${segment.text}" text-anchor="middle" style="font-variant-numeric:tabular-nums">${segment.value}</text>`
+        `<text x="${(x + segmentWidth / 2).toFixed(1)}" y="${barH / 2 + 5}" font-family="${font}" font-size="13" font-weight="600" fill="${segment.text}" text-anchor="middle" style="font-variant-numeric:tabular-nums">${segment.value}</text>`
       );
     }
     cursor += segmentWidth;
@@ -217,8 +225,11 @@ export function compositionBar(counts, options = {}) {
   cursor = 0;
   for (const segment of segments) {
     const segmentWidth = (segment.value / total) * width;
+    // The label starts where its own segment starts, which is the right hand
+    // edge when the page reads right to left.
+    const x = rtl ? width - cursor : cursor;
     parts.push(
-      `<text x="${cursor.toFixed(1)}" y="${barH + 26}" font-family="${font}" font-size="13" fill="${onDark ? THEME.onVaultDim : THEME.slate}">${escapeText(segment.label)}</text>`
+      `<text x="${x.toFixed(1)}" y="${barH + 26}" font-family="${font}"${dirAttr} font-size="13" fill="${onDark ? THEME.onVaultDim : THEME.slate}" text-anchor="start">${escapeText(segment.label)}</text>`
     );
     cursor += segmentWidth;
   }

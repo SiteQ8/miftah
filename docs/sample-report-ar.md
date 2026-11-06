@@ -3,7 +3,7 @@
 ما التشفير الذي نشغله فعلا وما الذي ينكسر أولا.
 
 الهدف: `/home/claude/miftah/examples/sample-estate`
-تاريخ الإصدار: 2026-09-03T21:28:51.932Z
+تاريخ الإصدار: 2026-11-06T14:01:11.790Z
 
 ## الخلاصة
 
@@ -24,13 +24,13 @@
 
 البيانات التي يجب أن تبقى سرية مدة س سنة، في بيئة يستغرق انتقالها ص سنة، تكون مكشوفة فعلا متى تجاوز مجموع س وص عدد السنوات المتبقية قبل ظهور حاسوب كمي قادر على كسر التشفير.
 
-مدة السرية المطلوبة تتجاوز الأفق بمقدار 8.67 سنة، لذا فإن ما يسجل من حركة اليوم يصبح مقروءا قبل أن تفقد البيانات قيمتها.
+مدة السرية المطلوبة تتجاوز الأفق بمقدار 8.83 سنة، لذا فإن ما يسجل من حركة اليوم يصبح مقروءا قبل أن تفقد البيانات قيمتها.
 
 | | سنة |
 | --- | --- |
 | مدة سرية البيانات | 10 |
 | مدة الانتقال | 5 |
-| السنوات حتى الأفق | 6.33 |
+| السنوات حتى الأفق | 6.17 |
 
 ## الجرد
 
@@ -42,7 +42,7 @@
 | RSA | pke | مقبول | مكسور بخوارزمية شور | 49 | 4 | ML-KEM-768 for key establishment, ML-DSA-65 for signatures |
 | ECDH | key-agree | قوي | مكسور بخوارزمية شور | 42 | 4 | X25519MLKEM768 hybrid key exchange |
 | SHA-1 | hash | مكسور | مكسور بخوارزمية شور | 77 | 4 | SHA-256 or SHA-384 |
-| SSH configuration | unknown | ضعيف | مكسور بخوارزمية شور | 65 | 3 |  |
+| SSH configuration | unknown | ضعيف | مكسور بخوارزمية شور | 66 | 3 |  |
 | MD5 | hash | مكسور | مكسور بخوارزمية شور | 75 | 2 | SHA-256 for integrity, Argon2id or scrypt for passwords |
 | 3DES | block-cipher | مكسور | مكسور بخوارزمية شور | 75 | 2 | AES-256-GCM |
 | TLS configuration | unknown | مكسور | غير محدد | 48 | 1 |  |
@@ -125,7 +125,7 @@ Remove cryptography that is already broken against a classical attacker. None of
 | 3DES | AES-256-GCM | 75 | 2 | low |
 | DES | AES-256-GCM | 74 | 1 | low |
 | RC4 | ChaCha20-Poly1305 or AES-256-GCM | 74 | 1 | low |
-| SSH configuration | rsa-sha2-512 and ssh-ed25519 host keys with sntrup761x25519-sha512 key exchange | 65 | 3 | low |
+| SSH configuration | rsa-sha2-512 and ssh-ed25519 host keys with sntrup761x25519-sha512 key exchange | 66 | 3 | low |
 | Embedded secret key material | a key management service, with the exposed value rotated | 48 | 1 | low |
 | TLS configuration | TLS 1.3 with the X25519MLKEM768 group | 48 | 1 | low |
 | ECB mode | AES-256-GCM | 48 | 1 | low |

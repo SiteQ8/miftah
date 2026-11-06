@@ -3,7 +3,7 @@
 What cryptography do we run, and what breaks first.
 
 Target: `/home/claude/miftah/examples/sample-estate`
-Generated: 2026-09-03T21:28:51.932Z
+Generated: 2026-11-06T14:01:11.790Z
 
 ## Summary
 
@@ -24,13 +24,13 @@ critical 5, high 21, medium 6, low 3, info 12.
 
 Data that must stay secret for x years, in an estate that takes y years to migrate, is already exposed when x plus y exceeds z, the years remaining before a cryptographically relevant quantum computer exists.
 
-The secrecy requirement outruns the horizon by 8.67 years, so traffic recorded today is readable before the data stops mattering.
+The secrecy requirement outruns the horizon by 8.83 years, so traffic recorded today is readable before the data stops mattering.
 
 | | years |
 | --- | --- |
 | Data shelf life | 10 |
 | Migration time | 5 |
-| Years to horizon | 6.33 |
+| Years to horizon | 6.17 |
 
 ## Inventory
 
@@ -42,7 +42,7 @@ The secrecy requirement outruns the horizon by 8.67 years, so traffic recorded t
 | RSA | pke | acceptable | broken by Shor | 49 | 4 | ML-KEM-768 for key establishment, ML-DSA-65 for signatures |
 | ECDH | key-agree | strong | broken by Shor | 42 | 4 | X25519MLKEM768 hybrid key exchange |
 | SHA-1 | hash | broken | broken by Shor | 77 | 4 | SHA-256 or SHA-384 |
-| SSH configuration | unknown | weak | broken by Shor | 65 | 3 |  |
+| SSH configuration | unknown | weak | broken by Shor | 66 | 3 |  |
 | MD5 | hash | broken | broken by Shor | 75 | 2 | SHA-256 for integrity, Argon2id or scrypt for passwords |
 | 3DES | block-cipher | broken | broken by Shor | 75 | 2 | AES-256-GCM |
 | TLS configuration | unknown | broken | unknown | 48 | 1 |  |
@@ -125,7 +125,7 @@ Remove cryptography that is already broken against a classical attacker. None of
 | 3DES | AES-256-GCM | 75 | 2 | low |
 | DES | AES-256-GCM | 74 | 1 | low |
 | RC4 | ChaCha20-Poly1305 or AES-256-GCM | 74 | 1 | low |
-| SSH configuration | rsa-sha2-512 and ssh-ed25519 host keys with sntrup761x25519-sha512 key exchange | 65 | 3 | low |
+| SSH configuration | rsa-sha2-512 and ssh-ed25519 host keys with sntrup761x25519-sha512 key exchange | 66 | 3 | low |
 | Embedded secret key material | a key management service, with the exposed value rotated | 48 | 1 | low |
 | TLS configuration | TLS 1.3 with the X25519MLKEM768 group | 48 | 1 | low |
 | ECB mode | AES-256-GCM | 48 | 1 | low |

@@ -36,7 +36,12 @@ export const THEME = {
   live: '#2FBF8F',
   alarm: '#FF5A3C',
   alarmDeep: '#B3341F',
-  steel: '#4E7A92'
+  liveDeep: '#1A7A5C',
+
+  // The chart bands read as one material at three depths.
+  steel: '#4E7A92',
+  steelDeep: '#2C5A70',
+  steelDim: '#9DB2BD'
 };
 
 // One family everywhere. Webfonts are not an option because the console has to
@@ -48,6 +53,43 @@ export const SANS_AR =
   "'Noto Sans Arabic', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Arial, sans-serif";
 export const MONO = "ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace";
 
+
+// ---------------------------------------------------------------------------
+// Contrast.
+//
+// Text colour on a coloured chip used to be a hardcoded list of which two
+// backgrounds get dark text. That is a guess frozen in place: change a palette
+// value and a label silently drops below the readable threshold. Measuring it
+// means the right answer follows the colour.
+//
+// WCAG 2.1 relative luminance, so the numbers here are the same numbers an
+// auditor would produce.
+// ---------------------------------------------------------------------------
+
+function channel(value) {
+  const c = value / 255;
+  return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+export function luminance(hex) {
+  const value = String(hex).replace('#', '');
+  const [r, g, b] = [0, 2, 4].map((i) => channel(parseInt(value.slice(i, i + 2), 16)));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function contrast(foreground, background) {
+  const a = luminance(foreground);
+  const b = luminance(background);
+  const [hi, lo] = a > b ? [a, b] : [b, a];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+// Whichever of the two reads better on this background. Both candidates are
+// from the palette, so a chip never introduces a colour of its own.
+export function readableOn(background, light = '#FFFFFF', dark = THEME.vault) {
+  return contrast(dark, background) >= contrast(light, background) ? dark : light;
+}
+
 // Severity and verdict colours, resolved once so no surface invents its own.
 export function severityColour(severity) {
   return {
@@ -55,13 +97,13 @@ export function severityColour(severity) {
     high: THEME.alarmDeep,
     medium: THEME.signal,
     low: THEME.steel,
-    info: THEME.slate
-  }[severity] || THEME.slate;
+    info: THEME.slateDim
+  }[severity] || THEME.slateDim;
 }
 
 export function quantumColour(verdict) {
   return {
-    broken: THEME.alarm,
+    broken: THEME.alarmDeep,
     weakened: THEME.signal,
     resistant: THEME.live,
     unknown: THEME.slate

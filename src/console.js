@@ -8,7 +8,7 @@
 
 import { PALETTE } from './timeline.js';
 import { VERSION } from './version.js';
-import { THEME, SANS, MONO, severityColour, quantumColour } from './theme.js';
+import { THEME, SANS, MONO, severityColour, quantumColour, readableOn } from './theme.js';
 
 function escapeHtml(text) {
   return String(text ?? '')
@@ -132,10 +132,11 @@ var C = ${JSON.stringify({
     axis: THEME.vaultLine,
     axisText: THEME.onVaultDim,
     migration: THEME.steel,
-    secrecy: '#2C5A70',
+    secrecy: THEME.steelDeep,
     exposed: THEME.signal,
     live: THEME.live,
     alarm: THEME.alarm,
+    alarmDeep: THEME.alarmDeep,
     slate: THEME.slate
   })};
 
@@ -149,6 +150,14 @@ var SEVERITY_COLOUR = ${JSON.stringify({
     medium: severityColour('medium'),
     low: severityColour('low'),
     info: severityColour('info')
+  })};
+var SEVERITY_FALLBACK = ${JSON.stringify({ bg: severityColour('unrecognised'), fg: readableOn(severityColour('unrecognised')) })};
+var SEVERITY_TEXT = ${JSON.stringify({
+    critical: readableOn(severityColour('critical')),
+    high: readableOn(severityColour('high')),
+    medium: readableOn(severityColour('medium')),
+    low: readableOn(severityColour('low')),
+    info: readableOn(severityColour('info'))
   })};
 var QUANTUM_COLOUR = ${JSON.stringify({
     broken: quantumColour('broken'),
@@ -328,7 +337,7 @@ function figure(value, label, headline) {
 
 function riskColour(score) {
   if (score >= 75) return C.alarm;
-  if (score >= 55) return '#B3341F';
+  if (score >= 55) return C.alarmDeep;
   if (score >= 30) return C.exposed;
   return C.migration;
 }
@@ -373,7 +382,7 @@ function renderDebt() {
   var rows = findings.slice(0, 400).map(function (finding) {
     var where = finding.line ? finding.file + ':' + finding.line : finding.file;
     return '<tr>'
-      + '<td><span class="chip solid" style="background:' + (SEVERITY_COLOUR[finding.severity] || C.slate) + ';color:#fff">' + esc(finding.severity) + '</span></td>'
+      + '<td><span class="chip solid" style="background:' + (SEVERITY_COLOUR[finding.severity] || SEVERITY_FALLBACK.bg) + ';color:' + (SEVERITY_TEXT[finding.severity] || SEVERITY_FALLBACK.fg) + '">' + esc(finding.severity) + '</span></td>'
       + '<td><strong>' + esc(finding.title) + '</strong>' + (finding.detail ? '<span class="note">' + esc(finding.detail) + '</span>' : '') + '</td>'
       + '<td><code>' + esc(where) + '</code></td>'
       + '<td>' + esc(finding.advice) + '</td>'
@@ -604,14 +613,15 @@ function consoleStyles() {
   --paper: ${THEME.paper};
   --paper-raised: ${THEME.paperRaised};
   --paper-line: ${THEME.paperLine};
+  --paper-rule: #C2CDD4;
   --ink: ${THEME.ink};
   --slate: ${THEME.slate};
-  --slate-dim: ${THEME.slateDim};
   --on-vault: ${THEME.onVault};
   --on-vault-dim: ${THEME.onVaultDim};
   --signal: ${THEME.signal};
   --live: ${THEME.live};
   --alarm: ${THEME.alarm};
+  --alarm-deep: ${THEME.alarmDeep};
   --steel: ${THEME.steel};
   --sans: ${SANS};
   --mono: ${MONO};
@@ -837,7 +847,7 @@ select {
 
 .figure-value { font-size: 34px; font-weight: 300; line-height: 1.05; letter-spacing: -0.02em; }
 .figure-label { font-size: 13px; color: var(--slate); }
-.headline .figure-value { color: var(--alarm); }
+.headline .figure-value { color: var(--alarm-deep); }
 
 .tabs {
   display: flex;
@@ -886,7 +896,7 @@ th {
   border-bottom: 1px solid var(--paper-line);
 }
 
-td { padding: 14px 14px 14px 0; border-bottom: 1px solid var(--paper-line); vertical-align: top; }
+td { padding: 14px 14px 14px 0; border-bottom: 1px solid var(--paper-rule); vertical-align: top; }
 
 tbody tr:hover { background: var(--paper-raised); }
 
@@ -917,9 +927,12 @@ tbody tr:hover { background: var(--paper-raised); }
   margin-right: 7px;
   border-radius: 50%;
   background: var(--chip-dot);
+  /* The bright alarm fill is 2.81:1 on this surface. The ring carries the
+     shape so the dot stays visible without giving up the signal colour. */
+  box-shadow: 0 0 0 1px rgba(11, 26, 36, 0.55);
 }
 
-.chip.solid { padding: 3px 9px; color: #fff; font-weight: 600; }
+.chip.solid { padding: 3px 9px; font-weight: 600; }
 .chip.solid::before { display: none; }
 
 /* Inline blocks rather than flexbox, because gap degrades to nothing in older

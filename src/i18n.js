@@ -40,6 +40,7 @@ export const STRINGS = {
     findings: 'Findings',
     filesScanned: 'Files read',
     needsMigration: 'Assets needing migration',
+    criticalHigh: 'Critical and high findings',
     alreadyResistant: 'Already quantum resistant',
 
     moscaHeading: 'Mosca inequality',
@@ -126,6 +127,7 @@ export const STRINGS = {
     findings: 'النتائج',
     filesScanned: 'الملفات المقروءة',
     needsMigration: 'أصول تحتاج انتقالا',
+    criticalHigh: 'النتائج الحرجة والعالية',
     alreadyResistant: 'أصول مقاومة للكم',
 
     moscaHeading: 'متباينة موسكا',

@@ -6,8 +6,8 @@ import { t, STRINGS } from './i18n.js';
 import { scoreEstate } from './risk.js';
 import { buildRoadmap } from './roadmap.js';
 import { runChecklist } from './agility.js';
-import { horizonStrip, compositionBar, PALETTE } from './timeline.js';
-import { THEME, SANS, SANS_AR, MONO, severityColour, quantumColour } from './theme.js';
+import { horizonStrip, compositionBar } from './timeline.js';
+import { THEME, SANS, SANS_AR, MONO, severityColour, quantumColour, readableOn } from './theme.js';
 import { countBySeverity } from './scan.js';
 
 export function assemble(scan, profile = {}, now = new Date()) {
@@ -176,19 +176,6 @@ export function toMarkdown(model, locale = 'en') {
 
 // ---------------------------------------------------------------------- html
 
-const SEVERITY_COLOUR = {
-  critical: PALETTE.broken,
-  high: '#b8541f',
-  medium: PALETTE.weakened,
-  low: '#6d7b88',
-  info: PALETTE.resistant
-};
-
-// Amber and green need dark text to stay legible; red and slate need light.
-function chipText(background) {
-  return background === THEME.signal || background === THEME.live ? THEME.vault : '#ffffff';
-}
-
 function chip(label, background) {
   return `<span class="chip" style="--chip-dot:${background}">${escapeHtml(label)}</span>`;
 }
@@ -196,7 +183,7 @@ function chip(label, background) {
 // Severity stays solid, because in the findings table it is the thing being
 // sorted on and a dot is too quiet to scan.
 function solidChip(label, background) {
-  return `<span class="chip solid" style="background:${background};color:${chipText(background)}">${escapeHtml(label)}</span>`;
+  return `<span class="chip solid" style="background:${background};color:${readableOn(background)}">${escapeHtml(label)}</span>`;
 }
 
 function severityChip(label, severity) {
@@ -251,6 +238,7 @@ export function toHtml(model, locale = 'en') {
   });
 
   const composition = compositionBar(estate.counts, {
+    rtl: dir === 'rtl',
     labels: {
       broken: L('quantum.broken'),
       weakened: L('quantum.weakened'),
@@ -372,7 +360,7 @@ ${styles(dir)}
     </div>
     <div class="figure"><span class="figure-value">${estate.counts.needsMigration}</span><span class="figure-label">${escapeHtml(L('needsMigration'))}</span></div>
     <div class="figure"><span class="figure-value">${estate.counts.assets}</span><span class="figure-label">${escapeHtml(L('assets'))}</span></div>
-    <div class="figure"><span class="figure-value">${severity.critical + severity.high}</span><span class="figure-label">${escapeHtml(L('severity.critical'))} + ${escapeHtml(L('severity.high'))}</span></div>
+    <div class="figure"><span class="figure-value">${severity.critical + severity.high}</span><span class="figure-label">${escapeHtml(L('criticalHigh'))}</span></div>
     <div class="figure"><span class="figure-value">${agility.score}</span><span class="figure-label">${escapeHtml(L('agilityScore'))}</span></div>
   </section>
 
@@ -543,7 +531,7 @@ main > * { max-width: 1180px; margin-left: auto; margin-right: auto; }
 .figure { flex: 1 1 140px; min-width: 140px; padding: 24px 20px 24px 0; }
 .figure-value { display: block; font-size: 34px; font-weight: 300; line-height: 1.05; letter-spacing: -0.02em; }
 .figure-label { display: block; font-size: 13px; color: var(--slate); margin-top: 2px; }
-.headline .figure-value { color: var(--alarm); }
+.headline .figure-value { color: var(--alarm-deep); }
 
 section { margin-bottom: 46px; }
 h2 { font-size: 22px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
@@ -572,8 +560,8 @@ table { width: 100%; border-collapse: collapse; margin: 14px 0; table-layout: fi
 #findings col.c-adv { width: 43%; }
 th, td { overflow-wrap: break-word; }
 td .mono, td code { overflow-wrap: anywhere; }
-th { text-align: ${start}; font-size: 12px; font-weight: 600; color: var(--slate); padding: 0 14px 10px 0; border-bottom: 1px solid var(--paper-line); }
-td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--paper-line); vertical-align: top; }
+th { text-align: ${start}; font-size: 12px; font-weight: 600; color: var(--slate); padding: 0 14px 10px 0; border-bottom: 2px solid var(--ink); }
+td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--paper-rule); vertical-align: top; }
 td.right, th.right { text-align: ${end}; }
 tbody tr:hover { background: var(--paper-raised); }
 
@@ -584,12 +572,12 @@ code, .mono { direction: ltr; unicode-bidi: isolate; display: inline-block; max-
 code { color: var(--slate); }
 
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 0; font-size: 12.5px; font-weight: 500; color: var(--ink); background: none !important; white-space: normal; }
-.chip::before { content: ''; display: inline-block; flex: 0 0 auto; width: 8px; height: 8px; margin-${end}: 7px; border-radius: 50%; background: var(--chip-dot); }
+.chip::before { content: ''; display: inline-block; flex: 0 0 auto; width: 8px; height: 8px; margin-${end}: 7px; border-radius: 50%; background: var(--chip-dot); box-shadow: 0 0 0 1px rgba(11,26,36,0.55); }
 .risk { white-space: nowrap; }
 .risk-track { display: inline-block; vertical-align: middle; width: 58px; height: 6px; background: var(--paper-line); overflow: hidden; }
 .risk-fill { display: block; height: 6px; }
 .risk-value { display: inline-block; vertical-align: middle; margin-${start}: 8px; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--slate); }
-.chip.solid { padding: 3px 9px; color: #fff; font-weight: 600; white-space: nowrap; }
+.chip.solid { padding: 3px 9px; font-weight: 600; white-space: nowrap; }
 .chip.solid::before { display: none; }
 
 .wave { margin-bottom: 30px; }
@@ -610,8 +598,8 @@ li { margin-bottom: 5px; }
   .vault { background: #fff; color: var(--ink); padding: 0 0 20pt; border-bottom: 2px solid var(--ink); }
   .vault h1, .horizon-note, .meta dt { color: var(--slate); }
   .verdict, .meta dd, .wordmark { color: var(--ink); }
-  .huge { font-size: 60pt; color: var(--alarm); }
-  .huge.clear { color: #1a7a5c; }
+  .huge { font-size: 60pt; color: var(--alarm-deep); }
+  .huge.clear { color: var(--live-deep); }
   main { padding: 0; }
   section { break-inside: avoid; margin-bottom: 24pt; }
   tbody tr:hover { background: none; }

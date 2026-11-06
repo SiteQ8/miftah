@@ -206,6 +206,38 @@ test('the HTML report is a complete document with the right direction', () => {
   assert.ok(english.includes('<svg'));
 });
 
+test('every chart label lands inside the canvas in both directions', () => {
+  // The composition bar was laid out left to right whatever the language, with
+  // its labels anchored at start. Under a right to left page, start is the
+  // right hand edge of the text, so the first label was drawn leftward from
+  // zero and off the canvas, which is why the Arabic report showed two labels
+  // where the English showed three.
+  const model = assemble(scan, DEFAULT_PROFILE, NOW);
+
+  for (const lang of ['en', 'ar']) {
+    const html = toHtml(model, lang);
+    for (const svg of html.match(/<svg[\s\S]*?<\/svg>/g) || []) {
+      const box = svg.match(/viewBox="0 0 ([0-9.]+) ([0-9.]+)"/);
+      assert.ok(box, 'a chart has no viewBox to measure against');
+      const width = Number(box[1]);
+
+      for (const node of svg.match(/<text[^>]*>[^<]*<\/text>/g) || []) {
+        const label = node.replace(/<[^>]*>/g, '');
+        if (!label.trim()) continue;
+        const x = Number((node.match(/x="([-0-9.]+)"/) || [])[1]);
+        const anchor = (node.match(/text-anchor="([a-z]+)"/) || [])[1] || 'start';
+        assert.ok(x >= 0 && x <= width, `${lang}: "${label}" is anchored at ${x}, outside a ${width} wide canvas`);
+
+        // An anchor point on the canvas is not enough. Text runs away from its
+        // anchor, so a label anchored at an edge has to run inwards.
+        const runsLeft = (anchor === 'end') !== (lang === 'ar');
+        if (x < 1) assert.ok(!runsLeft, `${lang}: "${label}" starts at the left edge and runs further left`);
+        if (x > width - 1) assert.ok(runsLeft, `${lang}: "${label}" starts at the right edge and runs further right`);
+      }
+    }
+  }
+});
+
 test('the report escapes content rather than interpolating it', () => {
   const hostile = {
     target: '<script>alert(1)</script>',
