@@ -19,6 +19,9 @@ const MEDIA = path.join(DOCS, 'media');
 fs.mkdirSync(MEDIA, { recursive: true });
 
 const scan = scanTree(path.join(ROOT, 'examples', 'sample-estate'));
+// The published samples name the estate by its path in the repository, not by
+// wherever this checkout happens to sit on the machine that built them.
+scan.target = 'examples/sample-estate';
 const profile = { shelfLife: 10, migrationYears: 5, crqcYear: 2033, exposure: 'internet' };
 const mosca = moscaDeficit(profile);
 const estate = scoreEstate(scan.assets, profile);

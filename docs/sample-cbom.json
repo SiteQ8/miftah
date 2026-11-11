@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:7b139c7e-3058-45ad-a242-c27e8e7178f3",
+  "serialNumber": "urn:uuid:01aae199-c34c-458d-ac91-e262c27774d1",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-06T14:01:11.788Z",
+    "timestamp": "2026-11-11T09:40:37.077Z",
     "tools": {
       "components": [
         {
@@ -18,7 +18,7 @@
     },
     "component": {
       "type": "application",
-      "bom-ref": "target/home-claude-miftah-examples-sample-estate",
+      "bom-ref": "target/examples-sample-estate",
       "name": "sample-estate",
       "version": "unversioned"
     },
